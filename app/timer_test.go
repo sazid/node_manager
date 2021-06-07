@@ -2,46 +2,24 @@ package app
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 )
 
-type spyTimerFunc struct {
-	Interval time.Duration
-	Services []Service
-}
-
-func (s *spyTimerFunc) Run(ctx context.Context, _ interface{}) error {
-	ticker := time.NewTicker(s.Interval)
-	for {
-		select {
-		case <-ctx.Done():
-			return errors.New("timer cancelled")
-		case <-ticker.C:
-			for _, srv := range s.Services {
-				//goland:noinspection GoUnhandledErrorResult
-				go srv.Run(ctx)
-			}
-		}
-	}
-}
-
 func TestServiceTimer(t *testing.T) {
 	t.Run("start and run a timer", func(t *testing.T) {
-		var timer Timer = NewServiceTimer(1 * time.Millisecond)
+		var timer Timer = NewServiceTimer(1*time.Millisecond, nil)
 
-		err := timer.Run(context.Background(), nil)
-
-		if err != nil {
-			t.Errorf("got error, did not expect one")
-		}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		//goland:noinspection GoUnhandledErrorResult
+		go timer.Run(ctx, nil)
 	})
 
 	t.Run("start and stop a timer", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		var timer Timer = NewServiceTimer(100 * time.Millisecond)
+		var timer Timer = NewServiceTimer(100*time.Millisecond, nil)
 		ch := make(chan struct{}, 1)
 
 		go func() {
@@ -69,10 +47,7 @@ func TestServiceTimer(t *testing.T) {
 			return nil
 		}
 
-		var timer Timer = &spyTimerFunc{
-			Interval: 2 * time.Millisecond,
-			Services: []Service{srv},
-		}
+		var timer Timer = NewServiceTimer(2*time.Millisecond, []Service{srv})
 
 		go func() {
 			_ = timer.Run(ctx, nil)

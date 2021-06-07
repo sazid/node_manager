@@ -19,10 +19,10 @@ type ServiceTimer struct {
 	Services []Service
 }
 
-func NewServiceTimer(interval time.Duration) *ServiceTimer {
+func NewServiceTimer(interval time.Duration, services []Service) *ServiceTimer {
 	return &ServiceTimer{
 		Interval: interval,
-		Services: make([]Service, 0),
+		Services: services,
 	}
 }
 
@@ -33,7 +33,10 @@ func (s *ServiceTimer) Run(ctx context.Context, _ interface{}) error {
 		case <-ctx.Done():
 			return ErrTimerCancelled
 		case <-ticker.C:
-			return nil
+			for _, srv := range s.Services {
+				//goland:noinspection GoUnhandledErrorResult
+				go srv.Run(ctx)
+			}
 		}
 	}
 }
