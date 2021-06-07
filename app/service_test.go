@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"errors"
+	"log"
 	"reflect"
 	"testing"
 	"time"
@@ -21,10 +23,12 @@ func NewStubService(interval time.Duration, service *stubService) *stubService {
 	}
 }
 
-func (s *stubService) Run(ctx context.Context) {
+func (s *stubService) Run(ctx context.Context) (err error) {
 	s.calls = append(s.calls, "start")
 	if s.service != nil {
-		go s.service.Run(ctx)
+		go func() {
+			_ = s.service.Run(ctx)
+		}()
 	}
 
 	select {
@@ -34,13 +38,14 @@ func (s *stubService) Run(ctx context.Context) {
 	case <-time.After(s.interval * time.Millisecond):
 		s.calls = append(s.calls, "complete")
 	}
+	return
 }
 
 func TestService(t *testing.T) {
 	t.Run("start and run to completion", func(t *testing.T) {
 		var srv Service = NewStubService(0, nil)
 
-		srv.Run(context.Background())
+		_ = srv.Run(context.Background())
 
 		got := srv.(*stubService).calls
 		want := []string{"start", "complete"}
@@ -54,7 +59,9 @@ func TestService(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		var srv Service = NewStubService(10*time.Millisecond, nil)
 
-		go srv.Run(ctx)
+		go func() {
+			_ = srv.Run(ctx)
+		}()
 
 		// Simulate a situation where we cancel the service after 1ms delay.
 		time.Sleep(1 * time.Millisecond)
@@ -78,7 +85,9 @@ func TestService(t *testing.T) {
 			srv3 = NewStubService(500*time.Millisecond, srv2)
 		)
 
-		go srv3.Run(ctx)
+		go func() {
+			_ = srv3.Run(ctx)
+		}()
 
 		// Simulate a situation where we cancel the service after 100ms delay.
 		time.Sleep(100 * time.Millisecond)
@@ -102,6 +111,46 @@ func TestService(t *testing.T) {
 			if !reflect.DeepEqual(c.calls, c.want) {
 				t.Errorf("%q: got %q calls, wanted %q", c.name, c.calls, c.want)
 			}
+		}
+	})
+}
+
+func TestServiceFunc(t *testing.T) {
+	t.Run("start and run to completion", func(t *testing.T) {
+		var srv ServiceFunc = func(ctx context.Context) error {
+			log.Println("running service func")
+			return nil
+		}
+
+		if err := srv.Run(context.Background()); err != nil {
+			t.Errorf("got %v, want %v", err, nil)
+		}
+	})
+
+	t.Run("cancel a running service", func(t *testing.T) {
+		var srv ServiceFunc = func(ctx context.Context) error {
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-time.After(100 * time.Millisecond):
+				return errors.New("service not cancelled")
+			}
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		var err error = nil
+		go func() {
+			err = srv.Run(ctx)
+		}()
+
+		time.Sleep(1 * time.Millisecond)
+		cancel()
+		time.Sleep(10 * time.Millisecond)
+
+		if err != nil {
+			t.Errorf("expected the service to be cancelled earlier")
 		}
 	})
 }
