@@ -1,10 +1,16 @@
 package store
 
 import (
-	"fmt"
+	"errors"
 	"github.com/pelletier/go-toml"
 	"io"
 	"node_manager/app"
+)
+
+var (
+	ErrMinGreaterThanMax = errors.New("minimum is greater than maximum")
+	ErrNegativeInt       = errors.New("numbers cannot be negative")
+	ErrFailedToLoad      = errors.New("failed to read config data")
 )
 
 type Config struct {
@@ -24,12 +30,21 @@ func NewConfig() Config {
 func (f *Config) Load(reader io.Reader) error {
 	tree, err := toml.LoadReader(reader)
 	if err != nil {
-		return fmt.Errorf("error ocurred while loading config data\n%v", err)
+		return ErrFailedToLoad
 	}
 
 	nodeInfo := tree.Get("nodes").(*toml.Tree)
-	f.minNodes = int(nodeInfo.Get("minimum").(int64))
-	f.maxNodes = int(nodeInfo.Get("maximum").(int64))
+
+	minNodes := int(nodeInfo.Get("minimum").(int64))
+	maxNodes := int(nodeInfo.Get("maximum").(int64))
+	if minNodes < 0 || maxNodes < 0 {
+		return ErrNegativeInt
+	}
+	if minNodes > maxNodes {
+		return ErrMinGreaterThanMax
+	}
+	f.minNodes = minNodes
+	f.maxNodes = maxNodes
 
 	return nil
 }
