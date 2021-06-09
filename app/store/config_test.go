@@ -1,17 +1,10 @@
 package store
 
 import (
-	"fmt"
-	"io/ioutil"
+	"node_manager/app/test_utils"
 	"os"
 	"testing"
 )
-
-const tomlContent = `
-[nodes]
-minimum = %d
-maximum = %d
-`
 
 func TestFileConfig(t *testing.T) {
 	t.Run("load config from file", func(t *testing.T) {
@@ -33,7 +26,7 @@ func TestFileConfig(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			tempFile := DummyConfigFile(t, c.minNodes, c.maxNodes)
+			tempFile := test_utils.DummyConfigFile(t, c.minNodes, c.maxNodes)
 
 			err := config.Load(tempFile)
 			if err != c.err {
@@ -55,32 +48,4 @@ func TestFileConfig(t *testing.T) {
 			_ = os.Remove(tempFile.Name())
 		}
 	})
-}
-
-// DummyConfigFile creates a temporary file, writes some dummy data into it,
-// closes and reopens it, and then returns the `*os.File`.
-func DummyConfigFile(t testing.TB, minNodes, maxNodes int) *os.File {
-	t.Helper()
-	file, err := ioutil.TempFile("", "temp_config_*")
-	if err != nil {
-		t.Fatal("failed to create temp config file", err)
-	}
-
-	if _, err = file.WriteString(fmt.Sprintf(
-		tomlContent,
-		minNodes,
-		maxNodes,
-	)); err != nil {
-		t.Fatal("failed to write temp config data to file", err)
-	}
-
-	if err := file.Sync(); err != nil {
-		t.Fatal("failed to sync/flush content to disk", err)
-	}
-
-	if _, err := file.Seek(0, 0); err != nil {
-		t.Fatal("failed to seek file to origin (0, 0) position", err)
-	}
-
-	return file
 }
