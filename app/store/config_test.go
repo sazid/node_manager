@@ -18,9 +18,9 @@ func TestFileConfig(t *testing.T) {
 		config := NewConfig()
 
 		cases := []struct {
-			min int
-			max int
-			err error
+			minNodes int
+			maxNodes int
+			err      error
 		}{
 			{1, 1, nil},
 			{2, 5, nil},
@@ -33,7 +33,7 @@ func TestFileConfig(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			tempFile := DummyConfigFile(t, c.min, c.max)
+			tempFile := DummyConfigFile(t, c.minNodes, c.maxNodes)
 
 			err := config.Load(tempFile)
 			if err != c.err {
@@ -43,12 +43,12 @@ func TestFileConfig(t *testing.T) {
 				continue
 			}
 
-			if config.MinNodes() != c.min {
-				t.Errorf("got minimum nodes %d, want %d", config.MinNodes(), c.min)
+			if config.MinNodes() != c.minNodes {
+				t.Errorf("got minimum nodes %d, want %d", config.MinNodes(), c.minNodes)
 			}
 
-			if config.MaxNodes() != c.max {
-				t.Errorf("got maximum nodes %d, want %d", config.MaxNodes(), c.max)
+			if config.MaxNodes() != c.maxNodes {
+				t.Errorf("got maximum nodes %d, want %d", config.MaxNodes(), c.maxNodes)
 			}
 
 			_ = tempFile.Close()
@@ -57,9 +57,8 @@ func TestFileConfig(t *testing.T) {
 	})
 }
 
-// DummyConfigFile creates a temporary file, writes some dummy data into it
-// and then returns the `*os.File`. This file must be closed preferably
-// with a `defer os.Remove(file.Name)`.
+// DummyConfigFile creates a temporary file, writes some dummy data into it,
+// closes and reopens it, and then returns the `*os.File`.
 func DummyConfigFile(t testing.TB, minNodes, maxNodes int) *os.File {
 	t.Helper()
 	file, err := ioutil.TempFile("", "temp_config_*")
@@ -74,13 +73,13 @@ func DummyConfigFile(t testing.TB, minNodes, maxNodes int) *os.File {
 	)); err != nil {
 		t.Fatal("failed to write temp config data to file", err)
 	}
-	if err := file.Close(); err != nil {
-		t.Fatal("failed to close file", err)
+
+	if err := file.Sync(); err != nil {
+		t.Fatal("failed to sync/flush content to disk", err)
 	}
 
-	file, err = os.Open(file.Name())
-	if err != nil {
-		t.Fatal("failed to open temp config file", err)
+	if _, err := file.Seek(0, 0); err != nil {
+		t.Fatal("failed to seek file to origin (0, 0) position", err)
 	}
 
 	return file
