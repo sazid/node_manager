@@ -2,6 +2,7 @@ package poll_node_state
 
 import (
 	"context"
+	"fmt"
 	"node_manager/app/store"
 	"node_manager/app/test_utils"
 	"testing"
@@ -11,46 +12,53 @@ type spyNodeStarterService struct {
 	called int
 }
 
-func (s *spyNodeStarterService) Run(_ context.Context) error {
+func (s *spyNodeStarterService) Run(context.Context) error {
 	s.called++
 	return nil
 }
 
-func TestService(t *testing.T) {
-	t.Run("it should run Node starter service at least once", func(t *testing.T) {
-		config := LoadDummyConfig(t, 1, 1)
-		spyNodeStarter := &spyNodeStarterService{0}
-		srv := Service{
-			config:      config,
-			nodeStarter: spyNodeStarter,
-		}
+func TestMinimumNodeStarterRuns(t *testing.T) {
+	cases := []struct {
+		minNodes int
+		maxNodes int
+		called   int
+	}{
+		{
+			minNodes: 0,
+			maxNodes: 1,
+			called:   0,
+		},
+		{
+			minNodes: 1,
+			maxNodes: 1,
+			called:   0,
+		},
+		{
+			minNodes: 2,
+			maxNodes: 2,
+			called:   0,
+		},
+	}
 
-		_ = srv.Run(context.Background())
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("it should run 'Node Starter' service at least %d times", c.minNodes), func(t *testing.T) {
+			config := LoadDummyConfig(t, c.minNodes, c.maxNodes)
+			spyNodeStarter := &spyNodeStarterService{c.called}
+			srv := Service{
+				config:      config,
+				nodeStarter: spyNodeStarter,
+			}
 
-		want := config.MinNodes()
-		got := spyNodeStarter.called
+			_ = srv.Run(context.Background())
 
-		if got != want {
-			t.Errorf("got service called %v, want %v", got, want)
-		}
-	})
+			want := config.MinNodes()
+			got := spyNodeStarter.called
 
-	t.Run("it should run Node starter service at least twice", func(t *testing.T) {
-		config := LoadDummyConfig(t, 2, 2)
-		spyNodeStarter := &spyNodeStarterService{0}
-		srv := Service{
-			config:      config,
-			nodeStarter: spyNodeStarter,
-		}
-
-		_ = srv.Run(context.Background())
-
-		got := spyNodeStarter.called
-
-		if got != config.MinNodes() {
-			t.Errorf("got service called %v, want %v", got, config.MinNodes())
-		}
-	})
+			if got != want {
+				t.Errorf("got service called %v, want %v", got, want)
+			}
+		})
+	}
 }
 
 func LoadDummyConfig(t testing.TB, minNodes, maxNodes int) *store.Config {
