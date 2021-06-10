@@ -14,6 +14,15 @@ type Service struct {
 }
 
 func (s *Service) Run(ctx context.Context) (err error) {
+	// Logic for determining the number of nodes to spin up:
+	// # - number of
+	//
+	// 1. If, (# active nodes < # minimum nodes)
+	// 	  Then, start (# minimum nodes - # active nodes)
+	//
+	// 2. Else If, (# active nodes + 1 <= # max nodes)
+	// 	  Then, start 1 more node
+
 	if getCurrentNodes() < s.config.MinNodes() {
 		newNodesToStart := s.config.MinNodes() - getCurrentNodes()
 
