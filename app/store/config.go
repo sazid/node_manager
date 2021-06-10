@@ -27,36 +27,48 @@ func NewConfig() Config {
 	}
 }
 
-func (f *Config) Load(reader io.Reader) error {
+func (c *Config) Load(reader io.Reader) error {
 	tree, err := toml.LoadReader(reader)
 	if err != nil {
 		return ErrFailedToLoad
 	}
 
+	if err := c.validateAndLoadNodeInfo(tree); err != nil {
+		return err
+	}
+
+	// TODO: Add validation and data loading for external services.
+
+	return nil
+}
+
+func (c *Config) validateAndLoadNodeInfo(tree *toml.Tree) error {
 	nodeInfo := tree.Get("nodes").(*toml.Tree)
 
 	minNodes := int(nodeInfo.Get("minimum").(int64))
 	maxNodes := int(nodeInfo.Get("maximum").(int64))
+
 	if minNodes < 0 || maxNodes < 0 {
 		return ErrNegativeInt
 	}
 	if minNodes > maxNodes {
 		return ErrMinGreaterThanMax
 	}
-	f.minNodes = minNodes
-	f.maxNodes = maxNodes
+
+	c.minNodes = minNodes
+	c.maxNodes = maxNodes
 
 	return nil
 }
 
-func (f *Config) MaxNodes() int {
-	return f.maxNodes
+func (c *Config) MaxNodes() int {
+	return c.maxNodes
 }
 
-func (f *Config) MinNodes() int {
-	return f.minNodes
+func (c *Config) MinNodes() int {
+	return c.minNodes
 }
 
-func (f *Config) ExternalServices() []app.Service {
-	return f.externalServices
+func (c *Config) ExternalServices() []app.Service {
+	return c.externalServices
 }

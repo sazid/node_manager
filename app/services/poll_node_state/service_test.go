@@ -49,7 +49,9 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 				nodeStarter: spyNodeStarter,
 			}
 
-			_ = srv.Run(context.Background())
+			if err := srv.Run(context.Background()); err != nil {
+				t.Fatal("got an error, but did not expect one.", err)
+			}
 
 			want := config.MinNodes()
 			got := spyNodeStarter.called
