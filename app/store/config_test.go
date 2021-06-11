@@ -44,8 +44,33 @@ func TestFileConfig(t *testing.T) {
 				t.Errorf("got maximum nodes %d, want %d", config.MaxNodes(), c.maxNodes)
 			}
 
-			_ = tempFile.Close()
-			_ = os.Remove(tempFile.Name())
+			cleanupFile(tempFile)
 		}
 	})
+}
+
+func TestBadConfig(t *testing.T) {
+	t.Run("if bad config is provided, it should retain the previous config", func(t *testing.T) {
+		config := NewConfig()
+		tempFile := test_utils.DummyConfigFile(t, 5, 1)
+		defer cleanupFile(tempFile)
+
+		err := config.Load(tempFile)
+		if err == nil {
+			t.Fatal("should've errored out.", err)
+		}
+
+		if config.MinNodes() != 1 {
+			t.Errorf("got minimum no of nodes %d, want %d", config.MinNodes(), 1)
+		}
+
+		if config.MaxNodes() != 1 {
+			t.Errorf("got maximum no of nodes %d, want %d", config.MaxNodes(), 1)
+		}
+	})
+}
+
+func cleanupFile(f *os.File) {
+	_ = f.Close()
+	_ = os.Remove(f.Name())
 }
