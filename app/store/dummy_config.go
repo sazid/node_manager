@@ -41,7 +41,7 @@ func DummyConfigFile(t testing.TB, minNodes, maxNodes int) *os.File {
 	return file
 }
 
-func LoadDummyConfig(t testing.TB, minNodes, maxNodes int) *Config {
+func LoadDummyConfig(t testing.TB, minNodes, maxNodes int) Config {
 	file := DummyConfigFile(t, minNodes, maxNodes)
 	config := NewConfig()
 
@@ -52,7 +52,7 @@ func LoadDummyConfig(t testing.TB, minNodes, maxNodes int) *Config {
 	if err := file.Close(); err != nil {
 		t.Fatal("failed to close temp config file", err)
 	}
-	return &config
+	return config
 }
 
 func CleanupFile(f *os.File) {

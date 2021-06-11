@@ -16,6 +16,16 @@ func (s *spyNodeStarterService) Run(context.Context) error {
 	return nil
 }
 
+type spyActiveNodesService struct {
+	active     int
+	activeChan chan int
+}
+
+func (s *spyActiveNodesService) Run(context.Context) error {
+	s.activeChan <- s.active
+	return nil
+}
+
 func TestMinimumNodeStarterRuns(t *testing.T) {
 	cases := []struct {
 		minNodes int
@@ -43,10 +53,11 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 		t.Run(fmt.Sprintf("it should run 'Node Starter' service at least %d times", c.minNodes), func(t *testing.T) {
 			config := store.LoadDummyConfig(t, c.minNodes, c.maxNodes)
 			spyNodeStarter := &spyNodeStarterService{c.called}
-			srv := Service{
-				config:      config,
-				nodeStarter: spyNodeStarter,
+			spyActiveNodes := &spyActiveNodesService{
+				active:     0,
+				activeChan: make(chan int),
 			}
+			srv := New(config, spyNodeStarter, spyActiveNodes, spyActiveNodes.activeChan)
 
 			if err := srv.Run(context.Background()); err != nil {
 				t.Fatal("got an error, but did not expect one.", err)
@@ -61,3 +72,8 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 		})
 	}
 }
+
+//func TestOneMoreNode(t *testing.T) {
+//	config := store.LoadDummyConfig(t, 1, 2)
+//
+//}
