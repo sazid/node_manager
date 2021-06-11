@@ -1,8 +1,6 @@
 package store
 
 import (
-	"node_manager/app/test_utils"
-	"os"
 	"testing"
 )
 
@@ -26,7 +24,7 @@ func TestFileConfig(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			tempFile := test_utils.DummyConfigFile(t, c.minNodes, c.maxNodes)
+			tempFile := DummyConfigFile(t, c.minNodes, c.maxNodes)
 
 			err := config.Load(tempFile)
 			if err != c.err {
@@ -44,7 +42,7 @@ func TestFileConfig(t *testing.T) {
 				t.Errorf("got maximum nodes %d, want %d", config.MaxNodes(), c.maxNodes)
 			}
 
-			cleanupFile(tempFile)
+			CleanupFile(tempFile)
 		}
 	})
 }
@@ -52,8 +50,8 @@ func TestFileConfig(t *testing.T) {
 func TestBadConfig(t *testing.T) {
 	t.Run("if bad config is provided, it should retain the previous config", func(t *testing.T) {
 		config := NewConfig()
-		tempFile := test_utils.DummyConfigFile(t, 5, 1)
-		defer cleanupFile(tempFile)
+		tempFile := DummyConfigFile(t, 5, 1)
+		defer CleanupFile(tempFile)
 
 		err := config.Load(tempFile)
 		if err == nil {
@@ -68,9 +66,4 @@ func TestBadConfig(t *testing.T) {
 			t.Errorf("got maximum no of nodes %d, want %d", config.MaxNodes(), 1)
 		}
 	})
-}
-
-func cleanupFile(f *os.File) {
-	_ = f.Close()
-	_ = os.Remove(f.Name())
 }

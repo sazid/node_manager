@@ -1,4 +1,4 @@
-package test_utils
+package store
 
 import (
 	"fmt"
@@ -39,4 +39,23 @@ func DummyConfigFile(t testing.TB, minNodes, maxNodes int) *os.File {
 	}
 
 	return file
+}
+
+func LoadDummyConfig(t testing.TB, minNodes, maxNodes int) *Config {
+	file := DummyConfigFile(t, minNodes, maxNodes)
+	config := NewConfig()
+
+	if err := config.Load(file); err != nil {
+		t.Fatal("failed to load config", err)
+	}
+
+	if err := file.Close(); err != nil {
+		t.Fatal("failed to close temp config file", err)
+	}
+	return &config
+}
+
+func CleanupFile(f *os.File) {
+	_ = f.Close()
+	_ = os.Remove(f.Name())
 }

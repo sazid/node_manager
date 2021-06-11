@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"node_manager/app/store"
-	"node_manager/app/test_utils"
 	"testing"
 )
 
@@ -42,7 +41,7 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("it should run 'Node Starter' service at least %d times", c.minNodes), func(t *testing.T) {
-			config := LoadDummyConfig(t, c.minNodes, c.maxNodes)
+			config := store.LoadDummyConfig(t, c.minNodes, c.maxNodes)
 			spyNodeStarter := &spyNodeStarterService{c.called}
 			srv := Service{
 				config:      config,
@@ -61,18 +60,4 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 			}
 		})
 	}
-}
-
-func LoadDummyConfig(t testing.TB, minNodes, maxNodes int) *store.Config {
-	file := test_utils.DummyConfigFile(t, minNodes, maxNodes)
-	config := store.NewConfig()
-
-	if err := config.Load(file); err != nil {
-		t.Fatal("failed to load config", err)
-	}
-
-	if err := file.Close(); err != nil {
-		t.Fatal("failed to close temp config file", err)
-	}
-	return &config
 }
