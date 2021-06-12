@@ -30,29 +30,21 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 	cases := []struct {
 		minNodes int
 		maxNodes int
-		called   int
 	}{
-		{
-			minNodes: 0,
-			maxNodes: 1,
-			called:   0,
-		},
 		{
 			minNodes: 1,
 			maxNodes: 1,
-			called:   0,
 		},
 		{
 			minNodes: 2,
 			maxNodes: 2,
-			called:   0,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("it should run 'Node Starter' service at least %d times", c.minNodes), func(t *testing.T) {
 			config := store.LoadDummyConfig(t, c.minNodes, c.maxNodes)
-			spyNodeStarter := &spyNodeStarterService{c.called}
+			spyNodeStarter := new(spyNodeStarterService)
 			spyActiveNodes := &spyActiveNodesService{
 				active:     0,
 				activeChan: make(chan int),
@@ -67,13 +59,53 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 			got := spyNodeStarter.called
 
 			if got != want {
-				t.Errorf("got service called %v, want %v", got, want)
+				t.Errorf("got service called %v times, want %v", got, want)
 			}
 		})
 	}
 }
 
-//func TestOneMoreNode(t *testing.T) {
-//	config := store.LoadDummyConfig(t, 1, 2)
-//
-//}
+func TestOneMoreNode(t *testing.T) {
+	config := store.LoadDummyConfig(t, 2, 5)
+	spyNodeStarter := new(spyNodeStarterService)
+	spyActiveNodes := &spyActiveNodesService{
+		active:     config.MinNodes(),
+		activeChan: make(chan int),
+	}
+	srv := New(config, spyNodeStarter, spyActiveNodes, spyActiveNodes.activeChan)
+
+	if err := srv.Run(context.Background()); err != nil {
+		t.Fatal("got an error, but did not expect one.", err)
+	}
+
+	// We want 1 more node to be active by now
+	want := 1
+	got := spyNodeStarter.called
+
+	if got != want {
+		t.Errorf("got service called %v times, want %v", got, want)
+	}
+}
+
+func TestNoMoreNodesAfterMaxLimit(t *testing.T) {
+	config := store.LoadDummyConfig(t, 2, 5)
+	spyNodeStarter := new(spyNodeStarterService)
+	spyActiveNodes := &spyActiveNodesService{
+		active:     config.MaxNodes(),
+		activeChan: make(chan int),
+	}
+	srv := New(config, spyNodeStarter, spyActiveNodes, spyActiveNodes.activeChan)
+
+	if err := srv.Run(context.Background()); err != nil {
+		t.Fatal("got an error, but did not expect one.", err)
+	}
+
+	// Since the number of active nodes is already the maximum allowed,
+	// the service should not start any more new nodes.
+	want := 0
+	got := spyNodeStarter.called
+
+	if got != want {
+		t.Errorf("got service called %v times, want %v", got, want)
+	}
+}

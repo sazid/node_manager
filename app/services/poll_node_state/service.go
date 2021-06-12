@@ -49,6 +49,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	// 	  Then, start 1 more node
 
 	go s.activeNodesSrv.Run(ctx)
+
 	activeNodes := 0
 	select {
 	case <-time.After(ActiveNodesChanTimeout):
@@ -57,12 +58,16 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		break
 	}
 
+	var newNodesToStart int
 	if activeNodes < s.config.MinNodes() {
-		newNodesToStart := s.config.MinNodes() - activeNodes
-
-		for i := 0; i < newNodesToStart; i++ {
-			_ = s.nodeStarterSrv.Run(ctx)
-		}
+		newNodesToStart = s.config.MinNodes() - activeNodes
+	} else if activeNodes+1 <= s.config.MaxNodes() {
+		newNodesToStart = 1
 	}
+
+	for i := 0; i < newNodesToStart; i++ {
+		_ = s.nodeStarterSrv.Run(ctx)
+	}
+
 	return
 }
