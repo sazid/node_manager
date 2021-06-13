@@ -11,9 +11,9 @@ type spyNodeStarterService struct {
 	called int
 }
 
-func (s *spyNodeStarterService) Run(context.Context) error {
+func (s *spyNodeStarterService) Run(context.Context, interface{}) (result interface{}, err error) {
 	s.called++
-	return nil
+	return
 }
 
 type spyActiveNodesService struct {
@@ -21,9 +21,9 @@ type spyActiveNodesService struct {
 	activeChan chan int
 }
 
-func (s *spyActiveNodesService) Run(context.Context) error {
+func (s *spyActiveNodesService) Run(context.Context, interface{}) (result interface{}, err error) {
 	s.activeChan <- s.active
-	return nil
+	return
 }
 
 func TestMinimumNodeStarterRuns(t *testing.T) {
@@ -51,7 +51,7 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 			}
 			srv := New(config, spyNodeStarter, spyActiveNodes, spyActiveNodes.activeChan)
 
-			if err := srv.Run(context.Background()); err != nil {
+			if _, err := srv.Run(context.Background(), nil); err != nil {
 				t.Fatal("got an error, but did not expect one.", err)
 			}
 
@@ -74,7 +74,7 @@ func TestOneMoreNode(t *testing.T) {
 	}
 	srv := New(config, spyNodeStarter, spyActiveNodes, spyActiveNodes.activeChan)
 
-	if err := srv.Run(context.Background()); err != nil {
+	if _, err := srv.Run(context.Background(), nil); err != nil {
 		t.Fatal("got an error, but did not expect one.", err)
 	}
 
@@ -96,7 +96,7 @@ func TestNoMoreNodesAfterMaxLimit(t *testing.T) {
 	}
 	srv := New(config, spyNodeStarter, spyActiveNodes, spyActiveNodes.activeChan)
 
-	if err := srv.Run(context.Background()); err != nil {
+	if _, err := srv.Run(context.Background(), nil); err != nil {
 		t.Fatal("got an error, but did not expect one.", err)
 	}
 

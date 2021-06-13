@@ -26,7 +26,7 @@ func NewServiceTimer(interval time.Duration, services []Service) *ServiceTimer {
 	}
 }
 
-func (s *ServiceTimer) Run(ctx context.Context, _ interface{}) error {
+func (s *ServiceTimer) Run(ctx context.Context, message interface{}) error {
 	ticker := time.NewTicker(s.Interval)
 	for {
 		select {
@@ -35,7 +35,7 @@ func (s *ServiceTimer) Run(ctx context.Context, _ interface{}) error {
 		case <-ticker.C:
 			for _, srv := range s.Services {
 				//goland:noinspection GoUnhandledErrorResult
-				go srv.Run(ctx)
+				go srv.Run(ctx, message)
 			}
 		}
 	}

@@ -38,7 +38,7 @@ func New(config store.Config, nodeStarter, activeNodes app.Service, activeNodeCh
 	}
 }
 
-func (s *Service) Run(ctx context.Context) (err error) {
+func (s *Service) Run(ctx context.Context, message interface{}) (result interface{}, err error) {
 	// Logic for determining the number of nodes to spin up:
 	// # - number of
 	//
@@ -48,12 +48,12 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	// 2. Else If, (# active nodes + 1 <= # max nodes)
 	// 	  Then, start 1 more node
 
-	go s.activeNodesSrv.Run(ctx)
+	go s.activeNodesSrv.Run(ctx, nil)
 
 	activeNodes := 0
 	select {
 	case <-time.After(ActiveNodesChanTimeout):
-		return ErrActiveNodesChanTimeout
+		return nil, ErrActiveNodesChanTimeout
 	case activeNodes = <-s.activeNodesChan:
 		break
 	}
@@ -66,7 +66,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	}
 
 	for i := 0; i < newNodesToStart; i++ {
-		_ = s.nodeStarterSrv.Run(ctx)
+		_, _ = s.nodeStarterSrv.Run(ctx, nil)
 	}
 
 	return

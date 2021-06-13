@@ -42,12 +42,12 @@ func TestServiceTimer(t *testing.T) {
 
 		calls := 0
 		const minCalls = 3
-		var srv ServiceFunc = func(ctx context.Context) error {
+		var srv ServiceFunc = func(ctx context.Context, message interface{}) (result interface{}, err error) {
 			calls++
-			return nil
+			return
 		}
 
-		var timer Timer = NewServiceTimer(2*time.Millisecond, []Service{srv})
+		var timer Timer = NewServiceTimer(5*time.Millisecond, []Service{srv})
 
 		go func() {
 			_ = timer.Run(ctx, nil)
@@ -58,7 +58,8 @@ func TestServiceTimer(t *testing.T) {
 			ch <- struct{}{}
 		}()
 
-		time.Sleep(10 * time.Millisecond)
+		// Definitely not the best way to test a timer! Maybe we should create a spy for this?
+		time.Sleep(100 * time.Millisecond)
 		cancel()
 		<-ch
 	})

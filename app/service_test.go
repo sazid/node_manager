@@ -23,18 +23,17 @@ func NewStubService(interval time.Duration, service *stubService) *stubService {
 	}
 }
 
-func (s *stubService) Run(ctx context.Context) (err error) {
+func (s *stubService) Run(ctx context.Context, message interface{}) (result interface{}, err error) {
 	s.calls = append(s.calls, "start")
 	if s.service != nil {
 		go func() {
-			_ = s.service.Run(ctx)
+			_, _ = s.service.Run(ctx, message)
 		}()
 	}
 
 	select {
 	case <-ctx.Done():
 		s.calls = append(s.calls, "stop")
-		return
 	case <-time.After(s.interval * time.Millisecond):
 		s.calls = append(s.calls, "complete")
 	}
@@ -45,7 +44,7 @@ func TestService(t *testing.T) {
 	t.Run("start and run to completion", func(t *testing.T) {
 		var srv Service = NewStubService(0, nil)
 
-		_ = srv.Run(context.Background())
+		_, _ = srv.Run(context.Background(), nil)
 
 		got := srv.(*stubService).calls
 		want := []string{"start", "complete"}
@@ -60,7 +59,7 @@ func TestService(t *testing.T) {
 		var srv Service = NewStubService(10*time.Millisecond, nil)
 
 		go func() {
-			_ = srv.Run(ctx)
+			_, _ = srv.Run(ctx, nil)
 		}()
 
 		// Simulate a situation where we cancel the service after 1ms delay.
@@ -86,7 +85,7 @@ func TestService(t *testing.T) {
 		)
 
 		go func() {
-			_ = srv3.Run(ctx)
+			_, _ = srv3.Run(ctx, nil)
 		}()
 
 		// Simulate a situation where we cancel the service after 100ms delay.
@@ -117,39 +116,39 @@ func TestService(t *testing.T) {
 
 func TestServiceFunc(t *testing.T) {
 	t.Run("start and run to completion", func(t *testing.T) {
-		var srv ServiceFunc = func(ctx context.Context) error {
+		var srv ServiceFunc = func(ctx context.Context, message interface{}) (result interface{}, err error) {
 			log.Println("running service func")
-			return nil
+			return
 		}
 
-		if err := srv.Run(context.Background()); err != nil {
+		if _, err := srv.Run(context.Background(), nil); err != nil {
 			t.Errorf("got %v, want %v", err, nil)
 		}
 	})
 
 	t.Run("cancel a running service", func(t *testing.T) {
-		var srv ServiceFunc = func(ctx context.Context) error {
+		var srv ServiceFunc = func(ctx context.Context, message interface{}) (result interface{}, err error) {
 			select {
 			case <-ctx.Done():
-				return nil
+				return nil, nil
 			case <-time.After(100 * time.Millisecond):
-				return errors.New("service not cancelled")
+				return nil, errors.New("service not cancelled")
 			}
 		}
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		var err error = nil
+		err := make(chan error)
 		go func() {
-			err = srv.Run(ctx)
+			_, e := srv.Run(ctx, nil)
+			err <- e
 		}()
 
 		time.Sleep(1 * time.Millisecond)
 		cancel()
-		time.Sleep(10 * time.Millisecond)
 
-		if err != nil {
+		if <-err != nil {
 			t.Errorf("expected the service to be cancelled earlier")
 		}
 	})
