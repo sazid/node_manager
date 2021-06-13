@@ -5,15 +5,10 @@ import (
 	"errors"
 	"node_manager/app"
 	"node_manager/app/store"
-	"time"
 )
 
 var (
 	ErrActiveNodesChanTimeout = errors.New("timed out while waiting for active nodes channel")
-)
-
-const (
-	ActiveNodesChanTimeout = 5 * time.Second
 )
 
 // Service decides whether to start any new nodes. If it needs to start
@@ -25,20 +20,27 @@ type Service struct {
 	config         store.Config
 	nodeStarterSrv app.Service
 
-	activeNodesSrv  app.Service
-	activeNodesChan chan int
+	activeNodesSrv app.Service
 }
 
-func New(config store.Config, nodeStarter, activeNodes app.Service, activeNodeChan chan int) Service {
+type Message struct {
+	activeNodes int
+}
+
+func New(config store.Config, nodeStarterSrv, activeNodesSrv app.Service) Service {
 	return Service{
-		config:          config,
-		nodeStarterSrv:  nodeStarter,
-		activeNodesSrv:  activeNodes,
-		activeNodesChan: activeNodeChan,
+		config:         config,
+		nodeStarterSrv: nodeStarterSrv,
+		activeNodesSrv: activeNodesSrv,
 	}
 }
 
 func (s *Service) Run(ctx context.Context, message interface{}) (result interface{}, err error) {
+	m, ok := message.(Message)
+	if !ok {
+		app.PanicOnInvalidMessage(s, Message{})
+	}
+
 	// Logic for determining the number of nodes to spin up:
 	// # - number of
 	//
@@ -50,18 +52,10 @@ func (s *Service) Run(ctx context.Context, message interface{}) (result interfac
 
 	go s.activeNodesSrv.Run(ctx, nil)
 
-	activeNodes := 0
-	select {
-	case <-time.After(ActiveNodesChanTimeout):
-		return nil, ErrActiveNodesChanTimeout
-	case activeNodes = <-s.activeNodesChan:
-		break
-	}
-
 	var newNodesToStart int
-	if activeNodes < s.config.MinNodes() {
-		newNodesToStart = s.config.MinNodes() - activeNodes
-	} else if activeNodes+1 <= s.config.MaxNodes() {
+	if m.activeNodes < s.config.MinNodes() {
+		newNodesToStart = s.config.MinNodes() - m.activeNodes
+	} else if m.activeNodes+1 <= s.config.MaxNodes() {
 		newNodesToStart = 1
 	}
 

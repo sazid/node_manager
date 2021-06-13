@@ -17,12 +17,12 @@ func (s *spyNodeStarterService) Run(context.Context, interface{}) (result interf
 }
 
 type spyActiveNodesService struct {
-	active     int
-	activeChan chan int
+	active int
 }
 
-func (s *spyActiveNodesService) Run(context.Context, interface{}) (result interface{}, err error) {
-	s.activeChan <- s.active
+func (s *spyActiveNodesService) Run(_ context.Context, msg interface{}) (result interface{}, err error) {
+	m, _ := msg.(Message)
+	s.active = m.activeNodes
 	return
 }
 
@@ -46,12 +46,11 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 			config := store.LoadDummyConfig(t, c.minNodes, c.maxNodes)
 			spyNodeStarter := new(spyNodeStarterService)
 			spyActiveNodes := &spyActiveNodesService{
-				active:     0,
-				activeChan: make(chan int),
+				active: 0,
 			}
-			srv := New(config, spyNodeStarter, spyActiveNodes, spyActiveNodes.activeChan)
+			var srv Service = New(config, spyNodeStarter, spyActiveNodes)
 
-			if _, err := srv.Run(context.Background(), nil); err != nil {
+			if _, err := srv.Run(context.Background(), Message{}); err != nil {
 				t.Fatal("got an error, but did not expect one.", err)
 			}
 
@@ -69,12 +68,11 @@ func TestOneMoreNode(t *testing.T) {
 	config := store.LoadDummyConfig(t, 2, 5)
 	spyNodeStarter := new(spyNodeStarterService)
 	spyActiveNodes := &spyActiveNodesService{
-		active:     config.MinNodes(),
-		activeChan: make(chan int),
+		active: config.MinNodes(),
 	}
-	srv := New(config, spyNodeStarter, spyActiveNodes, spyActiveNodes.activeChan)
+	srv := New(config, spyNodeStarter, spyActiveNodes)
 
-	if _, err := srv.Run(context.Background(), nil); err != nil {
+	if _, err := srv.Run(context.Background(), Message{config.MinNodes()}); err != nil {
 		t.Fatal("got an error, but did not expect one.", err)
 	}
 
@@ -91,12 +89,11 @@ func TestNoMoreNodesAfterMaxLimit(t *testing.T) {
 	config := store.LoadDummyConfig(t, 2, 5)
 	spyNodeStarter := new(spyNodeStarterService)
 	spyActiveNodes := &spyActiveNodesService{
-		active:     config.MaxNodes(),
-		activeChan: make(chan int),
+		active: config.MaxNodes(),
 	}
-	srv := New(config, spyNodeStarter, spyActiveNodes, spyActiveNodes.activeChan)
+	srv := New(config, spyNodeStarter, spyActiveNodes)
 
-	if _, err := srv.Run(context.Background(), nil); err != nil {
+	if _, err := srv.Run(context.Background(), Message{config.MaxNodes()}); err != nil {
 		t.Fatal("got an error, but did not expect one.", err)
 	}
 
