@@ -2,13 +2,8 @@ package poll_node_state
 
 import (
 	"context"
-	"errors"
 	"node_manager/app"
 	"node_manager/app/store"
-)
-
-var (
-	ErrActiveNodesChanTimeout = errors.New("timed out while waiting for active nodes channel")
 )
 
 // Service decides whether to start any new nodes. If it needs to start
