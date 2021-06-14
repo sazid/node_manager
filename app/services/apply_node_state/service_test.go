@@ -1,8 +1,9 @@
-package poll_node_state
+package apply_node_state
 
 import (
 	"context"
 	"fmt"
+	"node_manager/app/services/poll_node_state"
 	"node_manager/app/store"
 	"testing"
 )
@@ -16,14 +17,25 @@ func (s *spyNodeStarterService) Run(context.Context, interface{}) (result interf
 	return
 }
 
-type spyActiveNodesService struct {
-	active int
+type spyNodeKillerService struct {
+	called int
 }
 
-func (s *spyActiveNodesService) Run(_ context.Context, msg interface{}) (result interface{}, err error) {
-	m, _ := msg.(Message)
-	s.active = m.activeNodes
+func (s *spyNodeKillerService) Run(ctx context.Context, _ interface{}) (result interface{}, err error) {
+	s.called++
 	return
+}
+
+type spyActiveNodesService struct {
+	idle       int
+	inProgress int
+}
+
+func (s *spyActiveNodesService) Run(_ context.Context, _ interface{}) (result interface{}, err error) {
+	return poll_node_state.Result{
+		InProgress: s.inProgress,
+		Idle:       s.idle,
+	}, nil
 }
 
 func TestMinimumNodeStarterRuns(t *testing.T) {
@@ -45,10 +57,12 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 		t.Run(fmt.Sprintf("it should run 'Node Starter' service at least %d times", c.minNodes), func(t *testing.T) {
 			config := store.LoadDummyConfig(t, c.minNodes, c.maxNodes)
 			spyNodeStarter := new(spyNodeStarterService)
+			spyNodeKiller := new(spyNodeKillerService)
 			spyActiveNodes := &spyActiveNodesService{
-				active: 0,
+				idle:       0,
+				inProgress: 0,
 			}
-			var srv Service = New(config, spyNodeStarter, spyActiveNodes)
+			srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
 
 			if _, err := srv.Run(context.Background(), Message{}); err != nil {
 				t.Fatal("got an error, but did not expect one.", err)
@@ -64,15 +78,17 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 	}
 }
 
-func TestOneMoreNode(t *testing.T) {
+func TestOneMoreNodeAfterMinLimit(t *testing.T) {
 	config := store.LoadDummyConfig(t, 2, 5)
 	spyNodeStarter := new(spyNodeStarterService)
+	spyNodeKiller := new(spyNodeKillerService)
 	spyActiveNodes := &spyActiveNodesService{
-		active: config.MinNodes(),
+		idle:       0,
+		inProgress: config.MinNodes(),
 	}
-	srv := New(config, spyNodeStarter, spyActiveNodes)
+	srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
 
-	if _, err := srv.Run(context.Background(), Message{config.MinNodes()}); err != nil {
+	if _, err := srv.Run(context.Background(), nil); err != nil {
 		t.Fatal("got an error, but did not expect one.", err)
 	}
 
@@ -88,12 +104,14 @@ func TestOneMoreNode(t *testing.T) {
 func TestNoMoreNodesAfterMaxLimit(t *testing.T) {
 	config := store.LoadDummyConfig(t, 2, 5)
 	spyNodeStarter := new(spyNodeStarterService)
+	spyNodeKiller := new(spyNodeKillerService)
 	spyActiveNodes := &spyActiveNodesService{
-		active: config.MaxNodes(),
+		idle:       0,
+		inProgress: config.MaxNodes(),
 	}
-	srv := New(config, spyNodeStarter, spyActiveNodes)
+	srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
 
-	if _, err := srv.Run(context.Background(), Message{config.MaxNodes()}); err != nil {
+	if _, err := srv.Run(context.Background(), nil); err != nil {
 		t.Fatal("got an error, but did not expect one.", err)
 	}
 
@@ -101,6 +119,29 @@ func TestNoMoreNodesAfterMaxLimit(t *testing.T) {
 	// the service should not start any more new nodes.
 	want := 0
 	got := spyNodeStarter.called
+
+	if got != want {
+		t.Errorf("got service called %v times, want %v", got, want)
+	}
+}
+
+func TestKillMoreThanOneIdleNodesAfterMinLimit(t *testing.T) {
+	config := store.LoadDummyConfig(t, 2, 5)
+	spyNodeStarter := new(spyNodeStarterService)
+	spyNodeKiller := new(spyNodeKillerService)
+	spyActiveNodes := &spyActiveNodesService{
+		idle:       3,
+		inProgress: 1,
+	}
+	srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
+
+	if _, err := srv.Run(context.Background(), nil); err != nil {
+		t.Fatal("got an error, but did not expect one.", err)
+	}
+
+	// We want 1 more node to be active by now
+	want := 2
+	got := spyNodeKiller.called
 
 	if got != want {
 		t.Errorf("got service called %v times, want %v", got, want)
