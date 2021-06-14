@@ -17,7 +17,7 @@ ELSE IF active == inprogress AND active+1 <= max allowed nodes THEN
 	start 1 more node
 
 // kill unnecessary nodes
-ELSE IF idle > 1 THEN
+ELSE IF idle > 1 AND idle > min nodes THEN
 	kill (idle - 1) nodes
 
 ```

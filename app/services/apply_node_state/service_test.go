@@ -2,11 +2,123 @@ package apply_node_state
 
 import (
 	"context"
-	"fmt"
 	"node_manager/app/services/poll_node_state"
 	"node_manager/app/store"
 	"testing"
 )
+
+func TestMinimumNodeStarterRuns(t *testing.T) {
+	cases := []struct {
+		name string
+
+		minNodes int
+		maxNodes int
+
+		idle       int
+		inProgress int
+
+		expectedStartCount int
+		expectedKillCount  int
+	}{
+		{
+			name:               "should run node starter at once",
+			minNodes:           1,
+			maxNodes:           2,
+			idle:               0,
+			inProgress:         0,
+			expectedStartCount: 1,
+			expectedKillCount:  0,
+		},
+		{
+			name:               "should run node starter twice",
+			minNodes:           2,
+			maxNodes:           2,
+			idle:               0,
+			inProgress:         0,
+			expectedStartCount: 2,
+			expectedKillCount:  0,
+		},
+		{
+			name:               "should start one more node after `minimum` no of nodes is in `InProgress` state.",
+			minNodes:           2,
+			maxNodes:           5,
+			idle:               0,
+			inProgress:         2,
+			expectedStartCount: 1,
+			expectedKillCount:  0,
+		},
+		{
+			name:               "should not start any more nodes after max limit reached",
+			minNodes:           2,
+			maxNodes:           5,
+			idle:               0,
+			inProgress:         5,
+			expectedStartCount: 0,
+			expectedKillCount:  0,
+		},
+		{
+			name:               "should kill 2 `Idle` nodes",
+			minNodes:           2,
+			maxNodes:           5,
+			idle:               3,
+			inProgress:         2,
+			expectedStartCount: 0,
+			expectedKillCount:  2,
+		},
+		{
+			name:               "should kill 1 `Idle` node",
+			minNodes:           2,
+			maxNodes:           5,
+			idle:               2,
+			inProgress:         2,
+			expectedStartCount: 0,
+			expectedKillCount:  1,
+		},
+		{
+			name:               "should not kill the only `Idle` node when min no of nodes are `InProgress`",
+			minNodes:           2,
+			maxNodes:           5,
+			idle:               1,
+			inProgress:         2,
+			expectedStartCount: 0,
+			expectedKillCount:  0,
+		},
+		{
+			name:               "should not start/kill any node when there is at least `minNodes` in `Idle` state",
+			minNodes:           2,
+			maxNodes:           5,
+			idle:               2,
+			inProgress:         0,
+			expectedStartCount: 0,
+			expectedKillCount:  0,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			config := store.LoadDummyConfig(t, c.minNodes, c.maxNodes)
+			spyNodeStarter := new(spyNodeStarterService)
+			spyNodeKiller := new(spyNodeKillerService)
+			spyActiveNodes := &spyActiveNodesService{
+				idle:       c.idle,
+				inProgress: c.inProgress,
+			}
+			srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
+
+			if _, err := srv.Run(context.Background(), nil); err != nil {
+				t.Fatal("got an error, but did not expect one.", err)
+			}
+
+			if spyNodeStarter.called != c.expectedStartCount {
+				t.Errorf("got start called %v times, want %v", spyNodeStarter.called, c.expectedStartCount)
+			}
+
+			if spyNodeKiller.called != c.expectedKillCount {
+				t.Errorf("got kill service called %v times, want %v", spyNodeKiller.called, c.expectedKillCount)
+			}
+		})
+	}
+}
 
 type spyNodeStarterService struct {
 	called int
@@ -36,114 +148,4 @@ func (s *spyActiveNodesService) Run(_ context.Context, _ interface{}) (result in
 		InProgress: s.inProgress,
 		Idle:       s.idle,
 	}, nil
-}
-
-func TestMinimumNodeStarterRuns(t *testing.T) {
-	cases := []struct {
-		minNodes int
-		maxNodes int
-	}{
-		{
-			minNodes: 1,
-			maxNodes: 1,
-		},
-		{
-			minNodes: 2,
-			maxNodes: 2,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(fmt.Sprintf("it should run 'Node Starter' service at least %d times", c.minNodes), func(t *testing.T) {
-			config := store.LoadDummyConfig(t, c.minNodes, c.maxNodes)
-			spyNodeStarter := new(spyNodeStarterService)
-			spyNodeKiller := new(spyNodeKillerService)
-			spyActiveNodes := &spyActiveNodesService{
-				idle:       0,
-				inProgress: 0,
-			}
-			srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
-
-			if _, err := srv.Run(context.Background(), Message{}); err != nil {
-				t.Fatal("got an error, but did not expect one.", err)
-			}
-
-			want := config.MinNodes()
-			got := spyNodeStarter.called
-
-			if got != want {
-				t.Errorf("got service called %v times, want %v", got, want)
-			}
-		})
-	}
-}
-
-func TestOneMoreNodeAfterMinLimit(t *testing.T) {
-	config := store.LoadDummyConfig(t, 2, 5)
-	spyNodeStarter := new(spyNodeStarterService)
-	spyNodeKiller := new(spyNodeKillerService)
-	spyActiveNodes := &spyActiveNodesService{
-		idle:       0,
-		inProgress: config.MinNodes(),
-	}
-	srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
-
-	if _, err := srv.Run(context.Background(), nil); err != nil {
-		t.Fatal("got an error, but did not expect one.", err)
-	}
-
-	// We want 1 more node to be active by now
-	want := 1
-	got := spyNodeStarter.called
-
-	if got != want {
-		t.Errorf("got service called %v times, want %v", got, want)
-	}
-}
-
-func TestNoMoreNodesAfterMaxLimit(t *testing.T) {
-	config := store.LoadDummyConfig(t, 2, 5)
-	spyNodeStarter := new(spyNodeStarterService)
-	spyNodeKiller := new(spyNodeKillerService)
-	spyActiveNodes := &spyActiveNodesService{
-		idle:       0,
-		inProgress: config.MaxNodes(),
-	}
-	srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
-
-	if _, err := srv.Run(context.Background(), nil); err != nil {
-		t.Fatal("got an error, but did not expect one.", err)
-	}
-
-	// Since the number of active nodes is already the maximum allowed,
-	// the service should not start any more new nodes.
-	want := 0
-	got := spyNodeStarter.called
-
-	if got != want {
-		t.Errorf("got service called %v times, want %v", got, want)
-	}
-}
-
-func TestKillMoreThanOneIdleNodesAfterMinLimit(t *testing.T) {
-	config := store.LoadDummyConfig(t, 2, 5)
-	spyNodeStarter := new(spyNodeStarterService)
-	spyNodeKiller := new(spyNodeKillerService)
-	spyActiveNodes := &spyActiveNodesService{
-		idle:       3,
-		inProgress: 1,
-	}
-	srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
-
-	if _, err := srv.Run(context.Background(), nil); err != nil {
-		t.Fatal("got an error, but did not expect one.", err)
-	}
-
-	// We want 1 more node to be active by now
-	want := 2
-	got := spyNodeKiller.called
-
-	if got != want {
-		t.Errorf("got service called %v times, want %v", got, want)
-	}
 }

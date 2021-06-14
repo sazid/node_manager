@@ -41,14 +41,13 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 
 	var startCount int
 	var killCount int
-
 	active := nodeState.Idle + nodeState.InProgress
 
 	if active < s.config.MinNodes() {
 		startCount = s.config.MinNodes() - active
 	} else if active == nodeState.InProgress && active+1 <= s.config.MaxNodes() {
 		startCount = 1
-	} else if nodeState.Idle > 1 {
+	} else if nodeState.Idle > 1 && active > s.config.MinNodes() {
 		killCount = nodeState.Idle - 1
 	}
 
