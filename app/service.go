@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 )
 
 type Service interface {
@@ -14,8 +13,4 @@ type ServiceFunc func(ctx context.Context, message interface{}) (result interfac
 
 func (s ServiceFunc) Run(ctx context.Context, message interface{}) (result interface{}, err error) {
 	return s(ctx, message)
-}
-
-func PanicOnInvalidMessage(srv, msg interface{}) {
-	panic(fmt.Sprintf("in %T, message must have type: %T", srv, msg))
 }

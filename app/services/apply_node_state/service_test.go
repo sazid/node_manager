@@ -21,7 +21,7 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 		expectedKillCount  int
 	}{
 		{
-			name:               "should run node starter at once",
+			name:               "should start one node",
 			minNodes:           1,
 			maxNodes:           2,
 			idle:               0,
@@ -30,7 +30,7 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 			expectedKillCount:  0,
 		},
 		{
-			name:               "should run node starter twice",
+			name:               "should start two nodes",
 			minNodes:           2,
 			maxNodes:           2,
 			idle:               0,
@@ -110,7 +110,7 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 			}
 
 			if spyNodeStarter.called != c.expectedStartCount {
-				t.Errorf("got start called %v times, want %v", spyNodeStarter.called, c.expectedStartCount)
+				t.Errorf("got start service called %v times, want %v", spyNodeStarter.called, c.expectedStartCount)
 			}
 
 			if spyNodeKiller.called != c.expectedKillCount {
