@@ -1,13 +1,12 @@
-package tests
+package store
 
 import (
-	"node_manager/app/store"
 	"testing"
 )
 
 func TestFileConfig(t *testing.T) {
 	t.Run("load config from file", func(t *testing.T) {
-		config := store.NewConfig()
+		config := NewConfig()
 
 		cases := []struct {
 			minNodes int
@@ -17,15 +16,15 @@ func TestFileConfig(t *testing.T) {
 			{1, 1, nil},
 			{2, 5, nil},
 			{5, 8, nil},
-			{10, 5, store.ErrMinGreaterThanMax},
-			{5, 0, store.ErrMinGreaterThanMax},
-			{-1, 1, store.ErrNegativeInt},
+			{10, 5, ErrMinGreaterThanMax},
+			{5, 0, ErrMinGreaterThanMax},
+			{-1, 1, ErrNegativeInt},
 			// ErrNegativeInt takes higher priority than `ErrMinGreaterThanMax`
-			{1, -1, store.ErrNegativeInt},
+			{1, -1, ErrNegativeInt},
 		}
 
 		for _, c := range cases {
-			tempFile := store.DummyConfigFile(t, c.minNodes, c.maxNodes)
+			tempFile := DummyConfigFile(t, c.minNodes, c.maxNodes)
 
 			err := config.Load(tempFile)
 			if err != c.err {
@@ -42,17 +41,14 @@ func TestFileConfig(t *testing.T) {
 			if config.MaxNodes() != c.maxNodes {
 				t.Errorf("got maximum nodes %d, want %d", config.MaxNodes(), c.maxNodes)
 			}
-
-			store.CleanupFile(tempFile)
 		}
 	})
 }
 
 func TestBadConfig(t *testing.T) {
 	t.Run("if bad config is provided, it should retain the previous config", func(t *testing.T) {
-		config := store.NewConfig()
-		tempFile := store.DummyConfigFile(t, 5, 1)
-		defer store.CleanupFile(tempFile)
+		config := NewConfig()
+		tempFile := DummyConfigFile(t, 5, 1)
 
 		err := config.Load(tempFile)
 		if err == nil {

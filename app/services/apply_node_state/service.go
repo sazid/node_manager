@@ -7,19 +7,18 @@ import (
 	"node_manager/app/store"
 )
 
-// Service decides whether to start any new nodes. If it needs to start
-// any new node, it'll run the nodeStarterSrv service.
+// Service decides whether to start/kill any nodes. If it needs to start
+// any new node, it'll run the `nodeStarterSrv` service. If it needs to
+// kill any node, it'll run the `nodeKillerSrv` service.
 //
 // This service calls another service for checking how many nodes are
-// currently active. The other service returns the result via a channel.
+// currently active.
 type Service struct {
 	config         store.Config
 	nodeStarterSrv app.Service
 	nodeKillerSrv  app.Service
 	nodeStateSrv   app.Service
 }
-
-type Message struct{}
 
 func New(config store.Config, nodeStarterSrv, nodeKillerSrv, activeNodesSrv app.Service) Service {
 	return Service{

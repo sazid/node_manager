@@ -69,6 +69,6 @@ func (c *Config) MinNodes() int {
 	return c.minNodes
 }
 
-func (c *Config) ExternalServices() []app.Service {
-	return c.externalServices
-}
+//func (c *Config) ExternalServices() []app.Service {
+//	return c.externalServices
+//}

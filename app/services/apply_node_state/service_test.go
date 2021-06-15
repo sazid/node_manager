@@ -1,8 +1,7 @@
-package tests
+package apply_node_state
 
 import (
 	"context"
-	"node_manager/app/services/apply_node_state"
 	"node_manager/app/services/poll_node_state"
 	"node_manager/app/store"
 	"testing"
@@ -97,14 +96,14 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			config := store.LoadDummyConfig(t, c.minNodes, c.maxNodes)
+			config := store.HelperLoadDummyConfig(t, c.minNodes, c.maxNodes)
 			spyNodeStarter := new(spyNodeStarterService)
 			spyNodeKiller := new(spyNodeKillerService)
 			spyActiveNodes := &spyActiveNodesService{
 				idle:       c.idle,
 				inProgress: c.inProgress,
 			}
-			srv := apply_node_state.New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
+			srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
 
 			if _, err := srv.Run(context.Background(), nil); err != nil {
 				t.Fatal("got an error, but did not expect one.", err)
@@ -134,7 +133,7 @@ type spyNodeKillerService struct {
 	called int
 }
 
-func (s *spyNodeKillerService) Run(ctx context.Context, _ interface{}) (result interface{}, err error) {
+func (s *spyNodeKillerService) Run(context.Context, interface{}) (result interface{}, err error) {
 	s.called++
 	return
 }
@@ -144,7 +143,7 @@ type spyActiveNodesService struct {
 	inProgress int
 }
 
-func (s *spyActiveNodesService) Run(_ context.Context, _ interface{}) (result interface{}, err error) {
+func (s *spyActiveNodesService) Run(context.Context, interface{}) (result interface{}, err error) {
 	return poll_node_state.Result{
 		InProgress: s.inProgress,
 		Idle:       s.idle,
