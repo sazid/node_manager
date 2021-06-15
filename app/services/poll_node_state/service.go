@@ -3,10 +3,15 @@ package poll_node_state
 import (
 	"bufio"
 	"context"
+	"errors"
 	"io"
 	"io/fs"
 	"log"
 	"path/filepath"
+)
+
+var (
+	ErrServiceCancelled = errors.New("`poll_node_state` service cancelled")
 )
 
 const (
@@ -35,7 +40,7 @@ type Service struct {
 	fsys fs.FS
 }
 
-func (s *Service) Run(context.Context, interface{}) (result interface{}, err error) {
+func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, err error) {
 	nodesDir, err := fs.ReadDir(s.fsys, ".")
 	if err != nil {
 		return Result{}, err
@@ -48,6 +53,14 @@ func (s *Service) Run(context.Context, interface{}) (result interface{}, err err
 	)
 
 	for _, nodeDir := range nodesDir {
+		// Allow cancellation of service.
+		select {
+		case <-ctx.Done():
+			return Result{}, ErrServiceCancelled
+		default:
+			break
+		}
+
 		dirEntries, err := fs.ReadDir(s.fsys, nodeDir.Name())
 		if err != nil {
 			log.Println("err: failed to open node directory.", err)

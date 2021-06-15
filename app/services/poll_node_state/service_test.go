@@ -30,6 +30,22 @@ func TestService(t *testing.T) {
 	}
 }
 
+func TestServiceCancelled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	fsys := setupFS(t)
+	srv := Service{
+		fsys: fsys,
+	}
+
+	cancel()
+	_, err := srv.Run(ctx, nil)
+
+	if err != ErrServiceCancelled {
+		t.Errorf("expected the service to be cancelled, got %+v, want %+v", err, ErrServiceCancelled)
+	}
+}
+
 func setupFS(t testing.TB) fs.FS {
 	t.Helper()
 
