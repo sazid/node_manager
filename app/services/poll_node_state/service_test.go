@@ -56,6 +56,8 @@ func setupFS(t testing.TB) fs.FS {
 		{fmt.Sprintf("node4/%s", statusFileName), statusInProgress},
 		{fmt.Sprintf("node5/%s", statusFileName), statusComplete},
 		{fmt.Sprintf("node6/%s", statusFileName), statusComplete},
+		{fmt.Sprintf("node7/"), statusComplete},
+		{fmt.Sprintf("/"), ""},
 	}
 
 	testMapFS := fstest.MapFS{}
