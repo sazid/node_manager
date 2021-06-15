@@ -1,7 +1,8 @@
-package apply_node_state
+package tests
 
 import (
 	"context"
+	"node_manager/app/services/apply_node_state"
 	"node_manager/app/services/poll_node_state"
 	"node_manager/app/store"
 	"testing"
@@ -103,7 +104,7 @@ func TestMinimumNodeStarterRuns(t *testing.T) {
 				idle:       c.idle,
 				inProgress: c.inProgress,
 			}
-			srv := New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
+			srv := apply_node_state.New(config, spyNodeStarter, spyNodeKiller, spyActiveNodes)
 
 			if _, err := srv.Run(context.Background(), nil); err != nil {
 				t.Fatal("got an error, but did not expect one.", err)
