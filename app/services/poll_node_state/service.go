@@ -3,24 +3,25 @@ package poll_node_state
 import (
 	"bufio"
 	"context"
+	"io"
 	"io/fs"
 	"log"
 	"path/filepath"
 )
 
-type Result struct {
-	InProgress int
-	Idle       int
-}
-
 const (
-	nodesDirName   = "nodes"
 	statusFileName = "status"
 
+	statusComplete   = "complete"
 	statusIdle       = "idle"
 	statusInProgress = "in_progress"
-	statusComplete   = "complete"
 )
+
+type Result struct {
+	Complete   int
+	Idle       int
+	InProgress int
+}
 
 // Service polls the file system to see which nodes are currently `Idle`
 // or `InProgress`. There is a third intermediate state - `Completed`
@@ -31,50 +32,70 @@ const (
 //
 // Start node -> `Idle` -> `InProgress` -> `Completed` -> Kill node
 type Service struct {
-	fs fs.FS
+	fsys fs.FS
 }
 
-func (s *Service) Run(_ context.Context, _ interface{}) (result interface{}, err error) {
-	nodesDir, err := fs.ReadDir(s.fs, ".")
+func (s *Service) Run(context.Context, interface{}) (result interface{}, err error) {
+	nodesDir, err := fs.ReadDir(s.fsys, ".")
 	if err != nil {
 		return Result{}, err
 	}
 
-	inProgress := 0
+	var (
+		complete   = 0
+		idle       = 0
+		inProgress = 0
+	)
 
-	for _, node := range nodesDir {
-		dir, err := fs.ReadDir(s.fs, node.Name())
+	for _, nodeDir := range nodesDir {
+		dirEntries, err := fs.ReadDir(s.fsys, nodeDir.Name())
 		if err != nil {
-			log.Println("err: failed to open directory.", err)
+			log.Println("err: failed to open node directory.", err)
 			continue
 		}
 
-		for _, f := range dir {
-			if f.Name() == statusFileName {
-				path := filepath.Join(node.Name(), f.Name())
-				statusFile, err := s.fs.Open(path)
-				if err != nil {
-					return Result{}, err
-				}
-
-				scanner := bufio.NewScanner(statusFile)
-
-				scanner.Scan()
-				status := scanner.Text()
-
-				switch status {
-				case statusInProgress:
-					inProgress++
-				}
-
-				if err := statusFile.Close(); err != nil {
-					return Result{}, nil
-				}
-			}
+		if !fileExistsInDir(dirEntries, statusFileName) {
+			continue
 		}
+
+		statusFile, err := s.fsys.Open(filepath.Join(
+			nodeDir.Name(), statusFileName))
+		if err != nil {
+			return Result{}, err
+		}
+
+		status := readStatus(statusFile)
+
+		switch status {
+		case statusInProgress:
+			inProgress++
+		case statusIdle:
+			idle++
+		case statusComplete:
+			complete++
+		}
+
+		_ = statusFile.Close()
 	}
 
 	return Result{
+		Complete:   complete,
+		Idle:       idle,
 		InProgress: inProgress,
 	}, nil
+}
+
+func fileExistsInDir(dirEntries []fs.DirEntry, fileName string) bool {
+	for _, f := range dirEntries {
+		if f.Name() == fileName {
+			return true
+		}
+	}
+	return false
+}
+
+func readStatus(r io.Reader) string {
+	scanner := bufio.NewScanner(r)
+	scanner.Scan()
+	return scanner.Text()
 }

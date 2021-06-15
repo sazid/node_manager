@@ -11,15 +11,17 @@ import (
 
 func TestService(t *testing.T) {
 	ctx := context.Background()
-	testMapFS := setupFS(t)
+	fsys := setupFS(t)
 	srv := Service{
-		fs: testMapFS,
+		fsys: fsys,
 	}
 
 	got, _ := srv.Run(ctx, nil)
 	got = got.(Result)
 
 	want := Result{
+		Complete:   2,
+		Idle:       2,
 		InProgress: 2,
 	}
 
@@ -32,27 +34,17 @@ func setupFS(t testing.TB) fs.FS {
 	t.Helper()
 
 	nodesWithStatus := [][]string{
-		{fmt.Sprintf("node1/%s", statusFileName), "in_progress"},
-		{fmt.Sprintf("node2/"), ""},
-		{fmt.Sprintf("node3/"), ""},
-		{fmt.Sprintf("node4/%s", statusFileName), "in_progress"},
-		{fmt.Sprintf("node5/%s", statusFileName), "complete"},
-		{fmt.Sprintf("node6/%s", statusFileName), "complete"},
+		{fmt.Sprintf("node1/%s", statusFileName), statusInProgress},
+		{fmt.Sprintf("node2/%s", statusFileName), statusIdle},
+		{fmt.Sprintf("node3/%s", statusFileName), statusIdle},
+		{fmt.Sprintf("node4/%s", statusFileName), statusInProgress},
+		{fmt.Sprintf("node5/%s", statusFileName), statusComplete},
+		{fmt.Sprintf("node6/%s", statusFileName), statusComplete},
 	}
 
 	testMapFS := fstest.MapFS{}
 	for _, n := range nodesWithStatus {
 		testMapFS[n[0]] = &fstest.MapFile{Data: []byte(n[1])}
-	}
-
-	noStatusNodes := []string{
-		nodesWithStatus[1][0],
-		nodesWithStatus[2][0],
-	}
-
-	for _, n := range noStatusNodes {
-		// Set the `fs.MapFile.ModeDir` bit to mark it as a directory
-		testMapFS[n].Mode = testMapFS[n].Mode | fs.ModeDir
 	}
 
 	return testMapFS
