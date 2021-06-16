@@ -18,6 +18,7 @@ const nodeDirPrefix = "node_"
 
 var skipList = []string{
 	".git",
+	".venv",
 	".gitignore",
 	".github",
 	".vscode",
@@ -36,7 +37,7 @@ type Service struct {
 	copyDest string
 }
 
-func (s *Service) Run(_ context.Context, _ interface{}) (result interface{}, err error) {
+func (s *Service) Run(context.Context, interface{}) (result interface{}, err error) {
 	// 0. [Optional for now] Download node based on config provided version.
 	// 1. Copy node
 	// 2. Return path to copied node folder.
@@ -75,8 +76,8 @@ func generateDirName(baseDest string) string {
 func copyNode(src, dest string) error {
 	opt := copy2.Options{
 		Skip: func(src string) (bool, error) {
+			src = filepath.Base(src)
 			for _, s := range skipList {
-				src = filepath.Base(src)
 				if src == s {
 					return true, nil
 				}
