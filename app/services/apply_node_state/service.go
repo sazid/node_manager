@@ -14,18 +14,18 @@ import (
 // This service calls another service for checking how many nodes are
 // currently active.
 type Service struct {
-	config         store.Config
-	nodeStarterSrv app.Service
-	nodeKillerSrv  app.Service
-	nodeStateSrv   app.Service
+	config           store.Config
+	nodeStarterSrv   app.Service
+	nodeKillerSrv    app.Service
+	pollNodeStateSrv app.Service
 }
 
 func New(config store.Config, nodeStarterSrv, nodeKillerSrv, activeNodesSrv app.Service) Service {
 	return Service{
-		config:         config,
-		nodeStarterSrv: nodeStarterSrv,
-		nodeKillerSrv:  nodeKillerSrv,
-		nodeStateSrv:   activeNodesSrv,
+		config:           config,
+		nodeStarterSrv:   nodeStarterSrv,
+		nodeKillerSrv:    nodeKillerSrv,
+		pollNodeStateSrv: activeNodesSrv,
 	}
 }
 
@@ -33,7 +33,7 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 	nodeStateCh := make(chan poll_node_state.Result, 1)
 	defer close(nodeStateCh)
 	go func() {
-		res, _ := s.nodeStateSrv.Run(ctx, nil)
+		res, _ := s.pollNodeStateSrv.Run(ctx, nil)
 		nodeStateCh <- res.(poll_node_state.Result)
 	}()
 	nodeState := <-nodeStateCh

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestMinimumNodeStarterRuns(t *testing.T) {
+func TestNodeStartKillRuns(t *testing.T) {
 	cases := []struct {
 		name string
 

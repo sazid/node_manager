@@ -9,7 +9,7 @@ import (
 	"testing/fstest"
 )
 
-func TestService(t *testing.T) {
+func TestPollService(t *testing.T) {
 	ctx := context.Background()
 	fsys := setupFS(t)
 	srv := Service{
@@ -30,7 +30,7 @@ func TestService(t *testing.T) {
 	}
 }
 
-func TestServiceCancelled(t *testing.T) {
+func TestPollServiceCanBeCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	fsys := setupFS(t)
