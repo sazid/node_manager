@@ -16,6 +16,18 @@ type Result struct {
 
 const nodeDirPrefix = "node_"
 
+var skipList = []string{
+	".git",
+	".gitignore",
+	".github",
+	".vscode",
+	".style.yapf",
+	"__pycache__",
+	"pid.txt",
+	"node_id.conf",
+	"AutomationLog",
+}
+
 // Service copies an already available node into the "nodes" directory
 // and returns the path to that directory.
 type Service struct {
@@ -63,19 +75,8 @@ func generateDirName(baseDest string) string {
 func copyNode(src, dest string) error {
 	opt := copy2.Options{
 		Skip: func(src string) (bool, error) {
-			skipList := []string{
-				".git",
-				".gitignore",
-				".github",
-				".vscode",
-				".style.yapf",
-				"__pycache__",
-				"pid.txt",
-				"node_id.conf",
-				"AutomationLog",
-			}
-
 			for _, s := range skipList {
+				src = filepath.Base(src)
 				if src == s {
 					return true, nil
 				}

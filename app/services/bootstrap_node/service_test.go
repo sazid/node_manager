@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"io/ioutil"
+	"node_manager/app/constants"
 	"node_manager/app/store"
 	"os"
 	"path/filepath"
@@ -69,6 +70,7 @@ func generateTempDir(t testing.TB, pattern string) string {
 }
 
 func generateTempNode(t testing.TB) (nodeDir, copyDest string, err error) {
+	t.Helper()
 	nodeDir = generateTempDir(t, "zeuz_node")
 	copyDest = generateTempDir(t, "node_instances")
 
@@ -89,5 +91,28 @@ func generateTempNode(t testing.TB) (nodeDir, copyDest string, err error) {
 	_ = writer.Flush()
 	_ = tempFile.Close()
 
+	generateSkipListFiles(t, nodeDir)
+
 	return
+}
+
+func generateSkipListFiles(t testing.TB, nodeDir string) {
+	t.Helper()
+	for _, item := range skipList {
+		_ = os.WriteFile(filepath.Join(nodeDir, item), []byte("testing skip files"), constants.OS_USER_RW)
+		tempFile, err := os.OpenFile(filepath.Join(nodeDir, item), os.O_RDWR, constants.OS_USER_RW)
+		if err != nil {
+			continue
+		}
+
+		writer := bufio.NewWriter(tempFile)
+		_, err = writer.WriteString("testing skip files")
+		if err != nil {
+			return
+		}
+
+		// Write contents to disk and close the file.
+		_ = writer.Flush()
+		_ = tempFile.Close()
+	}
 }
