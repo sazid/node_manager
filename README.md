@@ -1,7 +1,7 @@
 # node_manager
 Automatically manage zeuz node instances and external service reporting.
 
-![](docs/node_manager_flow.png)
+![](docs/node_manager.png)
 
 Decision for node to start/kill:
 
