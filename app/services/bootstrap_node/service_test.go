@@ -16,7 +16,7 @@ func TestBootstrapNode(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	config := store.NewConfig()
+	config := store.New()
 
 	nodeDir := test_utils.GenerateTempNode(t, skipList)
 	defer os.RemoveAll(nodeDir)

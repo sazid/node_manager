@@ -96,7 +96,7 @@ func TestNodeStartKillRuns(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			config := store.HelperLoadDummyConfig(t, c.minNodes, c.maxNodes)
+			config := store.DummyConfig(t, c.minNodes, c.maxNodes, "", "")
 			spyNodeStarter := new(spyNodeStarterService)
 			spyNodeKiller := new(spyNodeKillerService)
 			spyActiveNodes := &spyActiveNodesService{

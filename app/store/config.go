@@ -14,13 +14,17 @@ var (
 )
 
 type Config struct {
+	server           string
+	apiKey           string
 	minNodes         int
 	maxNodes         int
 	externalServices []app.Service
 }
 
-func NewConfig() Config {
+func New() Config {
 	return Config{
+		server:           "",
+		apiKey:           "",
 		minNodes:         1,
 		maxNodes:         1,
 		externalServices: []app.Service{},
@@ -43,8 +47,14 @@ func (c *Config) Load(reader io.Reader) error {
 }
 
 func (c *Config) validateAndLoadNodeInfo(tree *toml.Tree) error {
-	nodeInfo := tree.Get("nodes").(*toml.Tree)
+	serverInfo := tree.Get("server").(*toml.Tree)
+	url := serverInfo.Get("url").(string)
+	apiKey := serverInfo.Get("api").(string)
 
+	c.server = url
+	c.apiKey = apiKey
+
+	nodeInfo := tree.Get("nodes").(*toml.Tree)
 	minNodes := int(nodeInfo.Get("minimum").(int64))
 	maxNodes := int(nodeInfo.Get("maximum").(int64))
 
@@ -67,6 +77,14 @@ func (c *Config) MaxNodes() int {
 
 func (c *Config) MinNodes() int {
 	return c.minNodes
+}
+
+func (c *Config) Server() string {
+	return c.server
+}
+
+func (c *Config) APIKey() string {
+	return c.apiKey
 }
 
 //func (c *Config) ExternalServices() []app.Service {

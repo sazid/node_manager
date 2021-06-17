@@ -6,7 +6,7 @@ import (
 
 func TestFileConfig(t *testing.T) {
 	t.Run("load config from file", func(t *testing.T) {
-		config := NewConfig()
+		config := New()
 
 		cases := []struct {
 			minNodes int
@@ -24,7 +24,7 @@ func TestFileConfig(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			tempFile := DummyConfigFile(t, c.minNodes, c.maxNodes)
+			tempFile := DummyConfigFile(t, c.minNodes, c.maxNodes, "", "")
 
 			err := config.Load(tempFile)
 			if err != c.err {
@@ -47,8 +47,8 @@ func TestFileConfig(t *testing.T) {
 
 func TestBadConfig(t *testing.T) {
 	t.Run("if bad config is provided, it should retain the previous config", func(t *testing.T) {
-		config := NewConfig()
-		tempFile := DummyConfigFile(t, 5, 1)
+		config := New()
+		tempFile := DummyConfigFile(t, 5, 1, "", "")
 
 		err := config.Load(tempFile)
 		if err == nil {

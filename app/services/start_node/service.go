@@ -2,6 +2,7 @@ package start_node
 
 import (
 	"context"
+	"io"
 	"log"
 	"node_manager/app"
 	"node_manager/app/services/bootstrap_node"
@@ -15,40 +16,47 @@ const nodeCliFile = "node_cli.py"
 // Service starts a node and leaves it running. A node goes into the
 // `Idle` state when it first starts and go online.
 type Service struct {
-	config           store.Config
-	bootstrapNodeSrv app.Service
+	Config           store.Config
+	BootstrapNodeSrv app.Service
+	OutputWriter     io.Writer
 }
 
 type Result struct {
-	Path string
+	NodePath string
 }
 
 func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, err error) {
-	r, err := s.bootstrapNodeSrv.Run(ctx, nil)
-	result = Result{
-		Path: r.(bootstrap_node.Result).Path,
-	}
-	log.Println(result.(Result).Path)
+	bootstrapResult, err := s.BootstrapNodeSrv.Run(ctx, nil)
 	if err != nil {
 		return
 	}
+	nodePath := bootstrapResult.(bootstrap_node.Result).Path
 
-	nodeCliPath := filepath.Join(result.(Result).Path, nodeCliFile)
+	nodeCliPath := filepath.Join(nodePath, nodeCliFile)
 
 	var nodeCliArgs = []string{
 		nodeCliPath,
 		"-s",
-		"https://github.com",
+		s.Config.Server(),
 		"-k",
-		"123ABC-456DEF-789GHI-101JKL",
+		s.Config.APIKey(),
 		"--once",
 	}
 
 	cmd := exec.CommandContext(ctx, "python3", nodeCliArgs...)
+	outputPipe, err := cmd.StdoutPipe()
+	log.Printf("Starting node:\n%s", cmd)
+
 	err = cmd.Start()
 	if err != nil {
 		return
 	}
 
+	_, _ = io.Copy(s.OutputWriter, outputPipe)
+	err = cmd.Wait()
+
+	result = Result{
+		NodePath: nodePath,
+	}
 	return
 }

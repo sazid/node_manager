@@ -24,9 +24,12 @@ print("starting execution")
 print("server:", server)
 print("api_key:", api_key)
 
-time.sleep(0.1)
+# time.sleep(0.1)
 
 print("stopping execution")
+
+# with open("hello.txt", "w") as f:
+#    f.write("Hello, World!")
 `
 
 func GenerateTempDir(t testing.TB, pattern string) string {
