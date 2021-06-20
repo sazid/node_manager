@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"node_manager/app"
 	"reflect"
 	"testing"
 	"testing/fstest"
@@ -46,17 +47,27 @@ func TestPollServiceCanBeCancelled(t *testing.T) {
 	}
 }
 
+const statusTemplate = `
+{
+  "state": "%s",
+  "report": {
+    "zip": "/a/b/c/run_id.zip",
+    "directory": "/a/b/c/run_id"
+  }
+}
+`
+
 func setupFS(t testing.TB) fs.FS {
 	t.Helper()
 
 	nodesWithStatus := [][]string{
-		{fmt.Sprintf("node1/%s", statusFileName), statusInProgress},
-		{fmt.Sprintf("node2/%s", statusFileName), statusIdle},
-		{fmt.Sprintf("node3/%s", statusFileName), statusIdle},
-		{fmt.Sprintf("node4/%s", statusFileName), statusInProgress},
-		{fmt.Sprintf("node5/%s", statusFileName), statusComplete},
-		{fmt.Sprintf("node6/%s", statusFileName), statusComplete},
-		{fmt.Sprintf("node7/"), statusComplete},
+		{fmt.Sprintf("node1/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateInProgress)},
+		{fmt.Sprintf("node2/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateIdle)},
+		{fmt.Sprintf("node3/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateIdle)},
+		{fmt.Sprintf("node4/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateInProgress)},
+		{fmt.Sprintf("node5/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateComplete)},
+		{fmt.Sprintf("node6/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateComplete)},
+		{fmt.Sprintf("node7/"), ""},
 		{fmt.Sprintf("/"), ""},
 	}
 
