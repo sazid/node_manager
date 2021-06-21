@@ -67,8 +67,8 @@ func setupFS(t testing.TB) fs.FS {
 		{fmt.Sprintf("node4/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateInProgress)},
 		{fmt.Sprintf("node5/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateComplete)},
 		{fmt.Sprintf("node6/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateComplete)},
-		{fmt.Sprintf("node7/"), ""},
-		{fmt.Sprintf("/"), ""},
+		{fmt.Sprintf("node7/"), ""}, // no `node_state.json` file
+		{fmt.Sprintf("/"), ""},      // invalid path
 	}
 
 	testMapFS := fstest.MapFS{}
