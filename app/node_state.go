@@ -18,6 +18,8 @@ type Report struct {
 type State string
 
 const (
+	StateFilename = "node_state.json"
+
 	StateComplete   State = "complete"
 	StateIdle       State = "idle"
 	StateInProgress State = "in_progress"

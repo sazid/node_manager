@@ -19,7 +19,7 @@ type spyNodeRemover struct {
 
 func (s *spyNodeRemover) Run(_ context.Context, message interface{}) (result interface{}, err error) {
 	m := message.(node_remover.Message)
-	if !strings.Contains(m.NodeAbsolutePath, pidFileName) {
+	if !strings.Contains(m.NodeAbsolutePath, app.PidFilename) {
 		return nil, errors.New("does not contain the PID file")
 	}
 	s.called++
@@ -45,12 +45,12 @@ func setupFS(t testing.TB) (fs.FS, int) {
 	t.Helper()
 
 	nodePidFiles := [][]string{
-		{fmt.Sprintf("node1/%s", pidFileName), strconv.Itoa(pidSentinelValue)},
-		{fmt.Sprintf("node2/%s", pidFileName), strconv.Itoa(pidSentinelValue)},
-		{fmt.Sprintf("node3/%s", pidFileName), strconv.Itoa(pidSentinelValue)},
-		{fmt.Sprintf("node4/%s", pidFileName), strconv.Itoa(pidSentinelValue)},
-		{fmt.Sprintf("node5/%s", pidFileName), strconv.Itoa(pidSentinelValue)},
-		{fmt.Sprintf("node6/%s", pidFileName), strconv.Itoa(pidSentinelValue)},
+		{fmt.Sprintf("node1/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
+		{fmt.Sprintf("node2/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
+		{fmt.Sprintf("node3/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
+		{fmt.Sprintf("node4/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
+		{fmt.Sprintf("node5/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
+		{fmt.Sprintf("node6/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
 		{fmt.Sprintf("node7/"), ""}, // no `pid.txt` file
 		{fmt.Sprintf("/"), ""},      // invalid path
 	}

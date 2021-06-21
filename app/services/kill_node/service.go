@@ -1,25 +1,12 @@
 package kill_node
 
 import (
-	"bufio"
 	"context"
-	"io"
 	"io/fs"
 	"log"
 	"node_manager/app"
 	"node_manager/app/services/node_remover"
-	"os"
 	"path/filepath"
-	"strconv"
-)
-
-const (
-	pidFileName = "pid.txt"
-
-	// PIDs are non-negative in either unix (linux/mac) or windows systems.
-	// See https://stackoverflow.com/a/10019054 (unix)
-	// and https://stackoverflow.com/a/46058651 (windows)
-	pidSentinelValue = -99999999
 )
 
 type Service struct {
@@ -52,30 +39,31 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 			continue
 		}
 
-		if !app.FileExistsInDir(dirEntries, pidFileName) {
-			log.Printf("info: `%s` does not exist in the node at `%s`", pidFileName, nodeDir.Name())
+		//Find the PID file and kill node.
+		if !app.FileExistsInDir(dirEntries, app.PidFilename) {
+			log.Printf("info: `%s` does not exist in the node at `%s`", app.PidFilename, nodeDir.Name())
 			continue
 		}
 
 		pidFile, err := s.fsys.Open(filepath.Join(
-			nodeDir.Name(), pidFileName))
+			nodeDir.Name(), app.PidFilename))
 		if err != nil {
-			log.Printf("warn: failed to open %s file for reading node pid.", pidFileName)
+			log.Printf("warn: failed to open %s file for reading node pid.", app.PidFilename)
 			continue
 		}
 
-		pid, err := readNodePID(pidFile)
+		pid, err := app.ReadNodePID(pidFile)
 		if err != nil {
 			log.Println("warn: failed to read node pid.", err)
 			continue
 		}
 
-		if err := killProcess(pid); err != nil {
+		if err := app.KillProcess(pid); err != nil {
 			return nil, err
 		}
 
 		msg := node_remover.Message{
-			NodeAbsolutePath: filepath.Join(nodeDir.Name(), pidFileName),
+			NodeAbsolutePath: filepath.Join(nodeDir.Name(), app.PidFilename),
 		}
 		if _, err = s.nodeRemover.Run(ctx, msg); err != nil {
 			return nil, err
@@ -83,31 +71,4 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 	}
 
 	return
-}
-
-// readNodePID reads the PID from the `io.Reader` and returns
-// it as an `int`. The value will be set to `pidSentinelValue`
-// in the event of an error.
-func readNodePID(r io.Reader) (pid int, err error) {
-	scan := bufio.NewScanner(r)
-	scan.Scan()
-	pid, err = strconv.Atoi(scan.Text())
-	return
-}
-
-// killProcess finds the process with the given PID and kills it.
-// This ignores pid with value `pidSentinelValue`.
-func killProcess(pid int) error {
-	if pid == pidSentinelValue {
-		return nil
-	}
-
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		return err
-	}
-	if err = proc.Kill(); err != nil {
-		return err
-	}
-	return nil
 }

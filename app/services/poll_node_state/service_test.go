@@ -61,12 +61,12 @@ func setupFS(t testing.TB) fs.FS {
 	t.Helper()
 
 	nodesWithStatus := [][]string{
-		{fmt.Sprintf("node1/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateInProgress)},
-		{fmt.Sprintf("node2/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateIdle)},
-		{fmt.Sprintf("node3/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateIdle)},
-		{fmt.Sprintf("node4/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateInProgress)},
-		{fmt.Sprintf("node5/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateComplete)},
-		{fmt.Sprintf("node6/%s", stateFileName), fmt.Sprintf(statusTemplate, app.StateComplete)},
+		{fmt.Sprintf("node1/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateInProgress)},
+		{fmt.Sprintf("node2/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateIdle)},
+		{fmt.Sprintf("node3/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateIdle)},
+		{fmt.Sprintf("node4/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateInProgress)},
+		{fmt.Sprintf("node5/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateComplete)},
+		{fmt.Sprintf("node6/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateComplete)},
 		{fmt.Sprintf("node7/"), ""}, // no `node_state.json` file
 		{fmt.Sprintf("/"), ""},      // invalid path
 	}

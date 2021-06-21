@@ -13,10 +13,6 @@ var (
 	ErrServiceCancelled = errors.New("`poll_node_state` service cancelled")
 )
 
-const (
-	stateFileName = "node_state.json"
-)
-
 type Result struct {
 	// No of nodes in `complete` state.
 	Complete int
@@ -64,15 +60,15 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 			continue
 		}
 
-		if !app.FileExistsInDir(dirEntries, stateFileName) {
-			log.Printf("info: `%s` does not exist in the node at `%s`", stateFileName, nodeDir.Name())
+		if !app.FileExistsInDir(dirEntries, app.StateFilename) {
+			log.Printf("info: `%s` does not exist in the node at `%s`", app.StateFilename, nodeDir.Name())
 			continue
 		}
 
 		statusFile, err := s.fsys.Open(filepath.Join(
-			nodeDir.Name(), stateFileName))
+			nodeDir.Name(), app.StateFilename))
 		if err != nil {
-			log.Printf("warn: failed to open %s file for reading node state.", stateFileName)
+			log.Printf("warn: failed to open %s file for reading node state.", app.StateFilename)
 			continue
 		}
 
