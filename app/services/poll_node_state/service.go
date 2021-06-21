@@ -2,9 +2,7 @@ package poll_node_state
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
 	"io/fs"
 	"log"
 	"node_manager/app"
@@ -78,7 +76,7 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 			continue
 		}
 
-		state, err := readNodeState(statusFile)
+		state, err := app.ReadNodeState(statusFile)
 		if err != nil {
 			log.Println("warn: failed to read node state.", err)
 			continue
@@ -103,25 +101,4 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 		Idle:       idle,
 		InProgress: inProgress,
 	}, nil
-}
-
-// readNodeState reads the status of nodes available in disk and then reports back.
-//
-// Format:
-//
-//{
-//  "state": "idle",
-//  "report": {
-//    "zip": "/a/b/c/AutomationLog/run_id.zip",
-//    "directory": "/a/b/c/AutomationLog/run_id",
-//  }
-//}
-func readNodeState(r io.Reader) (app.State, error) {
-	dec := json.NewDecoder(r)
-	var state app.NodeState
-	err := dec.Decode(&state)
-	if err != nil {
-		return "", err
-	}
-	return state.State, nil
 }
