@@ -18,11 +18,21 @@ type Report struct {
 type State string
 
 const (
-	StateFilename = "node_state.json"
+	NodeStateFilename = "node_state.json"
 
 	StateComplete   State = "complete"
 	StateIdle       State = "idle"
 	StateInProgress State = "in_progress"
+
+	StatusTemplate = `
+{
+  "state": "%s",
+  "report": {
+    "zip": "/a/b/c/run_id.zip",
+    "directory": "/a/b/c/run_id"
+  }
+}
+`
 )
 
 // ReadNodeState reads the status of nodes available in disk and then reports back.

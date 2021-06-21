@@ -47,26 +47,16 @@ func TestPollServiceCanBeCancelled(t *testing.T) {
 	}
 }
 
-const statusTemplate = `
-{
-  "state": "%s",
-  "report": {
-    "zip": "/a/b/c/run_id.zip",
-    "directory": "/a/b/c/run_id"
-  }
-}
-`
-
 func setupFS(t testing.TB) fs.FS {
 	t.Helper()
 
 	nodesWithStatus := [][]string{
-		{fmt.Sprintf("node1/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateInProgress)},
-		{fmt.Sprintf("node2/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateIdle)},
-		{fmt.Sprintf("node3/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateIdle)},
-		{fmt.Sprintf("node4/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateInProgress)},
-		{fmt.Sprintf("node5/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateComplete)},
-		{fmt.Sprintf("node6/%s", app.StateFilename), fmt.Sprintf(statusTemplate, app.StateComplete)},
+		{fmt.Sprintf("node1/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateInProgress)},
+		{fmt.Sprintf("node2/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateIdle)},
+		{fmt.Sprintf("node3/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateIdle)},
+		{fmt.Sprintf("node4/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateInProgress)},
+		{fmt.Sprintf("node5/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateComplete)},
+		{fmt.Sprintf("node6/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateComplete)},
 		{fmt.Sprintf("node7/"), ""}, // no `node_state.json` file
 		{fmt.Sprintf("/"), ""},      // invalid path
 	}

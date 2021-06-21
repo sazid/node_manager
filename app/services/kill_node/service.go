@@ -39,6 +39,35 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 			continue
 		}
 
+		//Find the node state file.
+		if !app.FileExistsInDir(dirEntries, app.NodeStateFilename) {
+			log.Printf("info: `%s` does not exist in the node at `%s`", app.NodeStateFilename, nodeDir.Name())
+			continue
+		}
+
+		stateFile, err := s.fsys.Open(filepath.Join(
+			nodeDir.Name(), app.NodeStateFilename))
+		if err != nil {
+			log.Printf("warn: failed to open %s file for reading node state.", app.NodeStateFilename)
+			continue
+		}
+
+		state, err := app.ReadNodeState(stateFile)
+		if err != nil {
+			log.Println("warn: failed to read node state.", err)
+			_ = stateFile.Close()
+			continue
+		}
+		_ = stateFile.Close()
+
+		switch state {
+		case app.StateIdle:
+			break
+		default:
+			log.Printf("info: skipping node `%s` with state `%s`", nodeDir.Name(), state)
+			continue
+		}
+
 		//Find the PID file and kill node.
 		if !app.FileExistsInDir(dirEntries, app.PidFilename) {
 			log.Printf("info: `%s` does not exist in the node at `%s`", app.PidFilename, nodeDir.Name())
@@ -55,8 +84,10 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 		pid, err := app.ReadNodePID(pidFile)
 		if err != nil {
 			log.Println("warn: failed to read node pid.", err)
+			_ = pidFile.Close()
 			continue
 		}
+		_ = pidFile.Close()
 
 		if err := app.KillProcess(pid); err != nil {
 			return nil, err

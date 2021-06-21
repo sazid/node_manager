@@ -60,23 +60,25 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 			continue
 		}
 
-		if !app.FileExistsInDir(dirEntries, app.StateFilename) {
-			log.Printf("info: `%s` does not exist in the node at `%s`", app.StateFilename, nodeDir.Name())
+		if !app.FileExistsInDir(dirEntries, app.NodeStateFilename) {
+			log.Printf("info: `%s` does not exist in the node at `%s`", app.NodeStateFilename, nodeDir.Name())
 			continue
 		}
 
 		statusFile, err := s.fsys.Open(filepath.Join(
-			nodeDir.Name(), app.StateFilename))
+			nodeDir.Name(), app.NodeStateFilename))
 		if err != nil {
-			log.Printf("warn: failed to open %s file for reading node state.", app.StateFilename)
+			log.Printf("warn: failed to open %s file for reading node state.", app.NodeStateFilename)
 			continue
 		}
 
 		state, err := app.ReadNodeState(statusFile)
 		if err != nil {
 			log.Println("warn: failed to read node state.", err)
+			_ = statusFile.Close()
 			continue
 		}
+		_ = statusFile.Close()
 
 		switch state {
 		case app.StateInProgress:
@@ -88,8 +90,6 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 		default:
 			log.Printf("err: invalid node state: %s", state)
 		}
-
-		_ = statusFile.Close()
 	}
 
 	return Result{

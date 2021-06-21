@@ -27,7 +27,7 @@ func (s *spyNodeRemover) Run(_ context.Context, message interface{}) (result int
 }
 
 func TestKillNode(t *testing.T) {
-	fsys, validFileCount := setupFS(t)
+	fsys, idleNodeCount := setupFS(t)
 	nodeRemover := &spyNodeRemover{}
 	var srv app.Service = New(fsys, nodeRemover)
 
@@ -36,13 +36,24 @@ func TestKillNode(t *testing.T) {
 		t.Errorf("did not expect an error, got %+v, want %+v", err, nil)
 	}
 
-	if nodeRemover.called != validFileCount {
-		t.Errorf("got node remover called %v times, want %v", nodeRemover.called, validFileCount)
+	if nodeRemover.called != idleNodeCount {
+		t.Errorf("got node remover called %v times, want %v", nodeRemover.called, idleNodeCount)
 	}
 }
 
-func setupFS(t testing.TB) (fs.FS, int) {
+func setupFS(t testing.TB) (fsys fs.FS, idleNodeCount int) {
 	t.Helper()
+
+	nodesWithStatus := [][]string{
+		{fmt.Sprintf("node1/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateInProgress)},
+		{fmt.Sprintf("node2/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateIdle)},
+		{fmt.Sprintf("node3/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateIdle)},
+		{fmt.Sprintf("node4/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateInProgress)},
+		{fmt.Sprintf("node5/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateComplete)},
+		{fmt.Sprintf("node6/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateComplete)},
+		{fmt.Sprintf("node7/"), ""}, // no `node_state.json` file
+		{fmt.Sprintf("/"), ""},      // invalid path
+	}
 
 	nodePidFiles := [][]string{
 		{fmt.Sprintf("node1/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
@@ -59,6 +70,9 @@ func setupFS(t testing.TB) (fs.FS, int) {
 	for _, n := range nodePidFiles {
 		testMapFS[n[0]] = &fstest.MapFile{Data: []byte(n[1])}
 	}
+	for _, n := range nodesWithStatus {
+		testMapFS[n[0]] = &fstest.MapFile{Data: []byte(n[1])}
+	}
 
-	return testMapFS, len(nodePidFiles) - 2
+	return testMapFS, 2
 }
