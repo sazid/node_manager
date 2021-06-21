@@ -66,7 +66,7 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 			continue
 		}
 
-		if !fileExistsInDir(dirEntries, stateFileName) {
+		if !app.FileExistsInDir(dirEntries, stateFileName) {
 			log.Printf("info: `%s` does not exist in the node at `%s`", stateFileName, nodeDir.Name())
 			continue
 		}
@@ -105,15 +105,6 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 	}, nil
 }
 
-func fileExistsInDir(dirEntries []fs.DirEntry, fileName string) bool {
-	for _, f := range dirEntries {
-		if f.Name() == fileName {
-			return true
-		}
-	}
-	return false
-}
-
 // readNodeState reads the status of nodes available in disk and then reports back.
 //
 // Format:
@@ -126,9 +117,9 @@ func fileExistsInDir(dirEntries []fs.DirEntry, fileName string) bool {
 //  }
 //}
 func readNodeState(r io.Reader) (app.State, error) {
-	enc := json.NewDecoder(r)
+	dec := json.NewDecoder(r)
 	var state app.NodeState
-	err := enc.Decode(&state)
+	err := dec.Decode(&state)
 	if err != nil {
 		return "", err
 	}
