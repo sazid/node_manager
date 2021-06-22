@@ -1,6 +1,7 @@
 # node_manager
 
 [![Go](https://github.com/sazid/node_manager/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/sazid/node_manager/actions/workflows/go.yml)
+[![CodeQL](https://github.com/sazid/node_manager/workflows/CodeQL/badge.svg)](https://github.com/sazid/node_manager/actions/workflows/codeql-analysis.yml)
 
 Automatically manage zeuz node instances and external service reporting.
 
