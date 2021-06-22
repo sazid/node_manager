@@ -6,7 +6,7 @@ import (
 	"log"
 	"node_manager/app"
 	"node_manager/app/services/node_remover"
-	"path/filepath"
+	"path"
 )
 
 type Service struct {
@@ -45,7 +45,7 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 			continue
 		}
 
-		stateFile, err := s.fsys.Open(filepath.Join(
+		stateFile, err := s.fsys.Open(path.Join(
 			nodeDir.Name(), app.NodeStateFilename))
 		if err != nil {
 			log.Printf("warn: failed to open %s file for reading node state.", app.NodeStateFilename)
@@ -74,7 +74,7 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 			continue
 		}
 
-		pidFile, err := s.fsys.Open(filepath.Join(
+		pidFile, err := s.fsys.Open(path.Join(
 			nodeDir.Name(), app.PidFilename))
 		if err != nil {
 			log.Printf("warn: failed to open %s file for reading node pid.", app.PidFilename)
@@ -94,7 +94,7 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 		}
 
 		msg := node_remover.Message{
-			NodeAbsolutePath: filepath.Join(nodeDir.Name(), app.PidFilename),
+			NodeAbsolutePath: path.Join(nodeDir.Name(), app.PidFilename),
 		}
 		if _, err = s.nodeRemover.Run(ctx, msg); err != nil {
 			return nil, err

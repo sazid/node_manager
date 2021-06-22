@@ -43,7 +43,7 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 		"--once",
 	}
 
-	cmd := exec.CommandContext(ctx, "python3", nodeCliArgs...)
+	cmd := exec.CommandContext(ctx, "python", nodeCliArgs...)
 	outputPipe, err := cmd.StdoutPipe()
 	log.Printf("Starting node:\n%s", cmd)
 

@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"log"
 	"node_manager/app"
-	"path/filepath"
+	"path"
 )
 
 var (
@@ -65,7 +65,7 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 			continue
 		}
 
-		statusFile, err := s.fsys.Open(filepath.Join(
+		statusFile, err := s.fsys.Open(path.Join(
 			nodeDir.Name(), app.NodeStateFilename))
 		if err != nil {
 			log.Printf("warn: failed to open %s file for reading node state.", app.NodeStateFilename)
