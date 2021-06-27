@@ -91,6 +91,12 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 			idle++
 		case app.StateComplete:
 			complete++
+		case app.StateStarting:
+			// We consider a node that is starting just now as an `idle` node
+			// because we don't want to keep spawning new nodes until we've
+			// reached the max limit. We only want 1 more idle node to be
+			// launched.
+			idle++
 		default:
 			log.Printf("err: invalid node state: %s", state)
 		}

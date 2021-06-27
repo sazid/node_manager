@@ -23,6 +23,7 @@ const (
 	StateComplete   State = "complete"
 	StateIdle       State = "idle"
 	StateInProgress State = "in_progress"
+	StateStarting   State = "starting"
 
 	StatusTemplate = `
 {
