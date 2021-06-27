@@ -2,13 +2,11 @@ package kill_node
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 	"node_manager/app"
 	"node_manager/app/services/node_remover"
 	"strconv"
-	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -18,9 +16,8 @@ type spyNodeRemover struct {
 }
 
 func (s *spyNodeRemover) Run(_ context.Context, message interface{}) (result interface{}, err error) {
-	m := message.(node_remover.Message)
-	if !strings.Contains(m.NodeAbsolutePath, app.PidFilename) {
-		return nil, errors.New("does not contain the PID file")
+	if _, ok := message.(node_remover.Message); !ok {
+		return nil, fmt.Errorf("`message` type should be `node_remover.Message`, got %T", message)
 	}
 	s.called++
 	return
@@ -51,8 +48,8 @@ func setupFS(t testing.TB) (fsys fs.FS, idleNodeCount int) {
 		{fmt.Sprintf("node4/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateInProgress)},
 		{fmt.Sprintf("node5/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateComplete)},
 		{fmt.Sprintf("node6/%s", app.NodeStateFilename), fmt.Sprintf(app.StatusTemplate, app.StateComplete)},
-		{fmt.Sprintf("node7/"), ""}, // no `node_state.json` file
-		{fmt.Sprintf("/"), ""},      // invalid path
+		{"node7/", ""}, // no `node_state.json` file
+		{"/", ""},      // invalid path
 	}
 
 	nodePidFiles := [][]string{
@@ -62,8 +59,8 @@ func setupFS(t testing.TB) (fsys fs.FS, idleNodeCount int) {
 		{fmt.Sprintf("node4/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
 		{fmt.Sprintf("node5/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
 		{fmt.Sprintf("node6/%s", app.PidFilename), strconv.Itoa(app.PidSentinelValue)},
-		{fmt.Sprintf("node7/"), ""}, // no `pid.txt` file
-		{fmt.Sprintf("/"), ""},      // invalid path
+		{"node7/", ""}, // no `pid.txt` file
+		{"/", ""},      // invalid path
 	}
 
 	testMapFS := fstest.MapFS{}

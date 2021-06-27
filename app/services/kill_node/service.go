@@ -62,7 +62,6 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 
 		switch state {
 		case app.StateIdle:
-			break
 		default:
 			log.Printf("info: skipping node `%s` with state `%s`", nodeDir.Name(), state)
 			continue
@@ -94,7 +93,7 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 		}
 
 		msg := node_remover.Message{
-			NodeAbsolutePath: path.Join(nodeDir.Name(), app.PidFilename),
+			Dir: nodeDir.Name(),
 		}
 		if _, err = s.nodeRemover.Run(ctx, msg); err != nil {
 			return nil, err
