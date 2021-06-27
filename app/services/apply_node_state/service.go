@@ -20,12 +20,12 @@ type Service struct {
 	pollNodeStateSrv app.Service
 }
 
-func New(config store.Config, nodeStarterSrv, nodeKillerSrv, activeNodesSrv app.Service) Service {
+func New(config store.Config, nodeStarterSrv, nodeKillerSrv, pollNodeStateSrv app.Service) Service {
 	return Service{
 		config:           config,
 		nodeStarterSrv:   nodeStarterSrv,
 		nodeKillerSrv:    nodeKillerSrv,
-		pollNodeStateSrv: activeNodesSrv,
+		pollNodeStateSrv: pollNodeStateSrv,
 	}
 }
 
@@ -48,6 +48,11 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 		startCount = 1
 	} else if nodeState.Idle > 1 && active > s.config.MinNodes() {
 		killCount = nodeState.Idle - 1
+	}
+
+	// TODO (report): Remove this block once the report service is added.
+	if nodeState.Complete > 0 {
+		killCount = nodeState.Complete
 	}
 
 	for i := 0; i < startCount; i++ {

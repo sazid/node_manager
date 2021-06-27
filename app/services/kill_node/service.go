@@ -7,17 +7,20 @@ import (
 	"node_manager/app"
 	"node_manager/app/services/node_remover"
 	"path"
+	"path/filepath"
 )
 
 type Service struct {
-	fsys        fs.FS
-	nodeRemover app.Service
+	fsys         fs.FS
+	nodesDirPath string
+	nodeRemover  app.Service
 }
 
-func New(fsys fs.FS, nodeRemover app.Service) Service {
+func New(fsys fs.FS, nodesDir string, nodeRemover app.Service) Service {
 	return Service{
-		fsys:        fsys,
-		nodeRemover: nodeRemover,
+		fsys:         fsys,
+		nodesDirPath: nodesDir,
+		nodeRemover:  nodeRemover,
 	}
 }
 
@@ -62,6 +65,9 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 
 		switch state {
 		case app.StateIdle:
+		// TODO (report): Remove the app.StateComplete case once the report
+		// service is added.
+		case app.StateComplete:
 		default:
 			log.Printf("info: skipping node `%s` with state `%s`", nodeDir.Name(), state)
 			continue
@@ -88,16 +94,20 @@ func (s Service) Run(ctx context.Context, _ interface{}) (result interface{}, er
 		}
 		_ = pidFile.Close()
 
-		if err := app.KillProcess(pid); err != nil {
-			return nil, err
+		err = app.KillProcess(pid)
+		if err != nil {
+			log.Printf("failed to kill node with PID: %d, err: %+v", pid, err)
 		}
 
 		msg := node_remover.Message{
-			Dir: nodeDir.Name(),
+			Dir: filepath.Join(s.nodesDirPath, nodeDir.Name()),
 		}
 		if _, err = s.nodeRemover.Run(ctx, msg); err != nil {
-			return nil, err
+			log.Printf("failed to remove node %s", nodeDir.Name())
 		}
+
+		// Break out after we kill one node.
+		break
 	}
 
 	return

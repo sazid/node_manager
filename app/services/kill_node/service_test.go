@@ -26,14 +26,16 @@ func (s *spyNodeRemover) Run(_ context.Context, message interface{}) (result int
 func TestKillNode(t *testing.T) {
 	fsys, idleNodeCount := setupFS(t)
 	nodeRemover := &spyNodeRemover{}
-	var srv app.Service = New(fsys, nodeRemover)
+	var srv app.Service = New(fsys, ".", nodeRemover)
 
 	_, err := srv.Run(context.Background(), nil)
 	if err != nil {
 		t.Errorf("did not expect an error, got %+v, want %+v", err, nil)
 	}
 
-	if nodeRemover.called != idleNodeCount {
+	// TODO (report): remove the +1 from idleNodeCount once the report service
+	// added.
+	if nodeRemover.called+1 != idleNodeCount {
 		t.Errorf("got node remover called %v times, want %v", nodeRemover.called, idleNodeCount)
 	}
 }

@@ -52,19 +52,36 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 	}
 
 	cmd := exec.CommandContext(ctx, "python", nodeCliArgs...)
-	outputPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
+	cmd.Dir = nodePath
 	log.Printf("Starting node:\n%s", cmd)
+
+	// TODO: The output writer should be taken as a message
+	// or point to current node's AutomationLog dir.
+	var outputPipe io.ReadCloser
+	if s.outputWriter != nil {
+		outputPipe, err = cmd.StdoutPipe()
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	err = cmd.Start()
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	_, _ = io.Copy(s.outputWriter, outputPipe)
-	err = cmd.Wait()
+	// TODO: The output writer should be taken as a message
+	// or point to current node's AutomationLog dir.
+	if s.outputWriter != nil {
+		_, _ = io.Copy(s.outputWriter, outputPipe)
+	}
+
+	go func() {
+		err = cmd.Wait()
+		if err != nil {
+			log.Printf("failed to wait for cmd: %+v", err)
+		}
+	}()
 
 	result = Result{
 		NodePath: nodePath,

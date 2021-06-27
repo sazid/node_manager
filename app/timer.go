@@ -34,7 +34,6 @@ func (s *ServiceTimer) Run(ctx context.Context, message interface{}) error {
 			return ErrTimerCancelled
 		case <-ticker.C:
 			for _, srv := range s.Services {
-				//goland:noinspection GoUnhandledErrorResult
 				go srv.Run(ctx, message)
 			}
 		}
