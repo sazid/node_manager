@@ -7,7 +7,11 @@ build:
 	GOOS=darwin GOARCH=arm64 go build -o bin/nmg-mac-arm64 cmd/nmg/nmg.go
 
 run:
-	go run cmd/nmb/nmg.go
+	go run cmd/nmg/nmg.go
 
 test:
 	go test ./...
+
+clean:
+	go clean
+	rm -r bin/
