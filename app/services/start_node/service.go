@@ -16,17 +16,25 @@ const nodeCliFile = "node_cli.py"
 // Service starts a node and leaves it running. A node goes into the
 // `Idle` state when it first starts and go online.
 type Service struct {
-	Config           store.Config
-	BootstrapNodeSrv app.Service
-	OutputWriter     io.Writer
+	config           store.Config
+	bootstrapNodeSrv app.Service
+	outputWriter     io.Writer
 }
 
 type Result struct {
 	NodePath string
 }
 
+func New(config store.Config, bootstrapNodeSrv app.Service, outputWriter io.Writer) Service {
+	return Service{
+		config:           config,
+		bootstrapNodeSrv: bootstrapNodeSrv,
+		outputWriter:     outputWriter,
+	}
+}
+
 func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, err error) {
-	bootstrapResult, err := s.BootstrapNodeSrv.Run(ctx, nil)
+	bootstrapResult, err := s.bootstrapNodeSrv.Run(ctx, nil)
 	if err != nil {
 		return
 	}
@@ -37,14 +45,17 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 	var nodeCliArgs = []string{
 		nodeCliPath,
 		"-s",
-		s.Config.Server(),
+		s.config.Server(),
 		"-k",
-		s.Config.APIKey(),
+		s.config.APIKey(),
 		"--once",
 	}
 
 	cmd := exec.CommandContext(ctx, "python", nodeCliArgs...)
 	outputPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("Starting node:\n%s", cmd)
 
 	err = cmd.Start()
@@ -52,7 +63,7 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 		return
 	}
 
-	_, _ = io.Copy(s.OutputWriter, outputPipe)
+	_, _ = io.Copy(s.outputWriter, outputPipe)
 	err = cmd.Wait()
 
 	result = Result{

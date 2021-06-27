@@ -34,6 +34,10 @@ type Service struct {
 	fsys fs.FS
 }
 
+func New(fsys fs.FS) Service {
+	return Service{fsys}
+}
+
 func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, err error) {
 	nodesDir, err := fs.ReadDir(s.fsys, ".")
 	if err != nil {

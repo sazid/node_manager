@@ -21,11 +21,7 @@ func TestStartNode(t *testing.T) {
 
 	buf := &bytes.Buffer{}
 
-	srv := Service{
-		Config:           config,
-		BootstrapNodeSrv: stubBootstrapNodeSrv(t),
-		OutputWriter:     buf,
-	}
+	srv := New(config, stubBootstrapNodeSrv(t), buf)
 
 	type tempResult struct {
 		res Result

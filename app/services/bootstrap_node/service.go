@@ -3,11 +3,12 @@ package bootstrap_node
 import (
 	"context"
 	"fmt"
-	copy2 "github.com/otiai10/copy"
 	"node_manager/app/constants"
 	"node_manager/app/store"
 	"os"
 	"path/filepath"
+
+	copy2 "github.com/otiai10/copy"
 )
 
 type Result struct {
@@ -35,6 +36,14 @@ type Service struct {
 	config   store.Config
 	nodeDir  string
 	copyDest string
+}
+
+func New(config store.Config, nodeDir, copyDest string) Service {
+	return Service{
+		config:   config,
+		nodeDir:  nodeDir,
+		copyDest: copyDest,
+	}
 }
 
 func (s *Service) Run(context.Context, interface{}) (result interface{}, err error) {
