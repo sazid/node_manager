@@ -51,7 +51,17 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 		"--once",
 	}
 
-	cmd := exec.CommandContext(ctx, "python", nodeCliArgs...)
+	// First, check if `python3` is available, if not, we check for `python`. If
+	// that's not available, exit and let the user know.
+	pythonPath, err := exec.LookPath("python3")
+	if err != nil {
+		pythonPath, err = exec.LookPath("python")
+		if err != nil {
+			log.Fatal("could not find `python` or `python3` in PATH")
+		}
+	}
+
+	cmd := exec.CommandContext(ctx, pythonPath, nodeCliArgs...)
 	cmd.Dir = nodePath
 	log.Printf("Starting node:\n%s", cmd)
 

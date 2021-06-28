@@ -20,6 +20,7 @@ const nodeDirPrefix = "node_"
 var skipList = []string{
 	".git",
 	".venv",
+	".DS_Store",
 	".gitignore",
 	".github",
 	".vscode",

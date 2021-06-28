@@ -19,3 +19,4 @@ bin/
 cmd/nmg/zeuz_node/
 cmd/nmg/config.toml
 cmd/nmg/nodes/
+.DS_Store

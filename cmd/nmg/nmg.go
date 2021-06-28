@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log"
 	"node_manager/app"
 	"node_manager/app/constants"
 	"node_manager/app/services/apply_node_state"
@@ -52,10 +53,14 @@ func loadConfig(configFile string) store.Config {
 		_ = file.Close()
 	}()
 	if err != nil {
-		fmt.Println(err)
-		return configStore
+		log.Println(err)
+		log.Fatal("error opening the `config.toml` file")
 	}
-	configStore.Load(file)
+	err = configStore.Load(file)
+	if err != nil {
+		log.Println(err)
+		log.Fatal("error loading the config")
+	}
 	return configStore
 }
 
@@ -68,7 +73,7 @@ func loadDirFS(nodesDirPath string) fs.FS {
 }
 
 func setupNodeServicesTimer(srv app.Service) {
-	nodeServicesTimer := app.NewServiceTimer(3*time.Second, []app.Service{srv})
+	nodeServicesTimer := app.NewServiceTimer(1*time.Second, []app.Service{srv})
 	if err := nodeServicesTimer.Run(context.Background(), nil); err != nil {
 		panic(fmt.Sprintf("failed to start timer.%+v", err))
 	}
