@@ -8,6 +8,7 @@ import (
 	"node_manager/app/services/bootstrap_node"
 	"node_manager/app/store"
 	"os/exec"
+	"path"
 	"path/filepath"
 )
 
@@ -48,6 +49,8 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 		s.config.Server(),
 		"-k",
 		s.config.APIKey(),
+		"-n",
+		path.Base(nodePath),
 		"--once",
 	}
 
