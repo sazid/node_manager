@@ -30,6 +30,10 @@ func main() {
 		panic("cannot get current working directory")
 	}
 
+	// Clean up "nodes" directory on startup.
+	// TODO: Kill running nodes by walking through the nodes and reading their "pid.txt".
+	os.RemoveAll(nodesDirPath)
+
 	config := loadConfig(configFile)
 	nodesDir := loadDirFS(nodesDirPath) // should this be read from a config file or env variable?
 
