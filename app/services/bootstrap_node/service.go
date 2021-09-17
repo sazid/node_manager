@@ -62,9 +62,31 @@ func (s *Service) Run(context.Context, interface{}) (result interface{}, err err
 		return Result{}, err
 	}
 
+	if err := writeNodeStateFile(dest); err != nil {
+		return Result{}, err
+	}
+
 	return Result{
 		Path: dest,
 	}, nil
+}
+
+func writeNodeStateFile(dest string) error {
+	nodeStateFile := "node_state.json"
+	contents := `{"state": "starting", "report": {"zip": null, "directory": null}}`
+
+	nodeStatePath := filepath.Join(dest, nodeStateFile)
+
+	f, err := os.Create(nodeStatePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	f.WriteString(contents)
+	f.Sync()
+
+	return nil
 }
 
 // generateDirName generates a new random directory name with the
