@@ -15,7 +15,7 @@ type Result struct {
 	Path string
 }
 
-const nodeDirPrefix = "node_"
+var nodeDirPrefix = "nmg"
 
 var skipList = []string{
 	".git",
@@ -51,6 +51,8 @@ func (s *Service) Run(context.Context, interface{}) (result interface{}, err err
 	// 0. [Optional for now] Download node based on config provided version.
 	// 1. Copy node
 	// 2. Return path to copied node folder.
+
+	nodeDirPrefix = s.config.NodeIdPrefix()
 
 	dest := generateDirName(s.copyDest)
 
@@ -99,7 +101,7 @@ func generateDirName(baseDest string) string {
 	for i := 0; !os.IsNotExist(err); i++ {
 		dest = filepath.Join(
 			baseDest,
-			fmt.Sprintf("%s%d", nodeDirPrefix, i))
+			fmt.Sprintf("%s_%d", nodeDirPrefix, i))
 		_, err = os.Stat(dest)
 	}
 	return dest

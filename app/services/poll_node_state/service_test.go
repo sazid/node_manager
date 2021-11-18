@@ -22,7 +22,7 @@ func TestPollService(t *testing.T) {
 
 	want := Result{
 		Complete:   2,
-		Idle:       2,
+		Idle:       3,
 		InProgress: 2,
 	}
 

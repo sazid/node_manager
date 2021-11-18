@@ -66,6 +66,8 @@ func (s *Service) Run(ctx context.Context, _ interface{}) (result interface{}, e
 
 		if !app.FileExistsInDir(dirEntries, app.NodeStateFilename) {
 			log.Printf("info: `%s` does not exist in the node at `%s`", app.NodeStateFilename, nodeDir.Name())
+			// Nodes which were created very recently may not have the node_state.json file created
+			idle++
 			continue
 		}
 

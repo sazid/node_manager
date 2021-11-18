@@ -2,9 +2,10 @@ package store
 
 import (
 	"errors"
-	"github.com/pelletier/go-toml"
 	"io"
 	"node_manager/app"
+
+	"github.com/pelletier/go-toml"
 )
 
 var (
@@ -18,6 +19,7 @@ type Config struct {
 	apiKey           string
 	minNodes         int
 	maxNodes         int
+	nodeIdPrefix     string
 	externalServices []app.Service
 }
 
@@ -27,6 +29,7 @@ func New() Config {
 		apiKey:           "",
 		minNodes:         1,
 		maxNodes:         1,
+		nodeIdPrefix:     "node",
 		externalServices: []app.Service{},
 	}
 }
@@ -57,6 +60,7 @@ func (c *Config) validateAndLoadNodeInfo(tree *toml.Tree) error {
 	nodeInfo := tree.Get("nodes").(*toml.Tree)
 	minNodes := int(nodeInfo.Get("minimum").(int64))
 	maxNodes := int(nodeInfo.Get("maximum").(int64))
+	nodeIdPrefix := nodeInfo.Get("node_id_prefix")
 
 	if minNodes < 0 || maxNodes < 0 {
 		return ErrNegativeInt
@@ -64,9 +68,13 @@ func (c *Config) validateAndLoadNodeInfo(tree *toml.Tree) error {
 	if minNodes > maxNodes {
 		return ErrMinGreaterThanMax
 	}
+	if nodeIdPrefix == nil || nodeIdPrefix.(string) == "" {
+		nodeIdPrefix = "nmg"
+	}
 
 	c.minNodes = minNodes
 	c.maxNodes = maxNodes
+	c.nodeIdPrefix = nodeIdPrefix.(string)
 
 	return nil
 }
@@ -85,6 +93,10 @@ func (c *Config) Server() string {
 
 func (c *Config) APIKey() string {
 	return c.apiKey
+}
+
+func (c *Config) NodeIdPrefix() string {
+	return c.nodeIdPrefix
 }
 
 //func (c *Config) ExternalServices() []app.Service {
